@@ -1,5 +1,6 @@
 import { TokenWithBalance, Token } from './token';
 import { Address } from './utils';
+import { Chain, chainInfo } from './chain';
 
 export class PairReserve {
     readonly reserveToken: TokenWithBalance;
@@ -81,9 +82,14 @@ export class Pair {
                   : null;
     }
 
-    isBlockedForVirtualTrading(blockNumber: number): boolean {
-        // TODO: for arbitrum compare lastSwapTimestamp
-        return blockNumber < this.blocksDelay + this.lastSwapBlock;
+    isBlockedForVirtualTrading(chain: Chain, blockNumber: number): boolean {
+        return (
+            blockNumber <
+            this.blocksDelay +
+                (chainInfo[chain].useBlockTimestamp
+                    ? this.lastSwapTimestamp
+                    : this.lastSwapBlock)
+        );
     }
 
     hasTokenWithAddress(tokenAddress: Address): boolean {

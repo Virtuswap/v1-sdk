@@ -116,6 +116,7 @@ enum LiquidityPosition_orderBy {
     id
     user
     user__id
+    user__vrswLockedPositionsNumber
     pair
     pair__id
     pair__balance0
@@ -129,6 +130,7 @@ enum LiquidityPosition_orderBy {
     pair__totalMu
     pair__totalStaked
     pair__lastSwapBlock
+    pair__lastSwapTimestamp
     pair__allocationPoints
     pair__token0Price
     pair__token1Price
@@ -224,6 +226,7 @@ enum LpStakingPosition_orderBy {
     id
     user
     user__id
+    user__vrswLockedPositionsNumber
     pair
     pair__id
     pair__balance0
@@ -237,6 +240,7 @@ enum LpStakingPosition_orderBy {
     pair__totalMu
     pair__totalStaked
     pair__lastSwapBlock
+    pair__lastSwapTimestamp
     pair__allocationPoints
     pair__token0Price
     pair__token1Price
@@ -269,6 +273,7 @@ type Pair {
     totalMu: BigDecimal!
     totalStaked: BigDecimal!
     lastSwapBlock: BigInt!
+    lastSwapTimestamp: BigInt!
     whitelist(
         skip: Int = 0
         first: Int = 100
@@ -388,6 +393,7 @@ enum PairReserve_orderBy {
     pair__totalMu
     pair__totalStaked
     pair__lastSwapBlock
+    pair__lastSwapTimestamp
     pair__allocationPoints
     pair__token0Price
     pair__token1Price
@@ -487,6 +493,7 @@ enum PairWhitelist_orderBy {
     pair__totalMu
     pair__totalStaked
     pair__lastSwapBlock
+    pair__lastSwapTimestamp
     pair__allocationPoints
     pair__token0Price
     pair__token1Price
@@ -633,6 +640,14 @@ input Pair_filter {
     lastSwapBlock_lte: BigInt
     lastSwapBlock_in: [BigInt!]
     lastSwapBlock_not_in: [BigInt!]
+    lastSwapTimestamp: BigInt
+    lastSwapTimestamp_not: BigInt
+    lastSwapTimestamp_gt: BigInt
+    lastSwapTimestamp_lt: BigInt
+    lastSwapTimestamp_gte: BigInt
+    lastSwapTimestamp_lte: BigInt
+    lastSwapTimestamp_in: [BigInt!]
+    lastSwapTimestamp_not_in: [BigInt!]
     whitelist_: PairWhitelist_filter
     allocationPoints: BigInt
     allocationPoints_not: BigInt
@@ -706,6 +721,7 @@ enum Pair_orderBy {
     totalMu
     totalStaked
     lastSwapBlock
+    lastSwapTimestamp
     whitelist
     allocationPoints
     token0Price
@@ -1378,6 +1394,7 @@ enum TokenomicsParams_orderBy {
 
 type User {
     id: ID!
+    vrswLockedPositionsNumber: BigInt!
     liquidityPositions(
         skip: Int = 0
         first: Int = 100
@@ -1410,6 +1427,14 @@ input User_filter {
     id_lte: ID
     id_in: [ID!]
     id_not_in: [ID!]
+    vrswLockedPositionsNumber: BigInt
+    vrswLockedPositionsNumber_not: BigInt
+    vrswLockedPositionsNumber_gt: BigInt
+    vrswLockedPositionsNumber_lt: BigInt
+    vrswLockedPositionsNumber_gte: BigInt
+    vrswLockedPositionsNumber_lte: BigInt
+    vrswLockedPositionsNumber_in: [BigInt!]
+    vrswLockedPositionsNumber_not_in: [BigInt!]
     liquidityPositions_: LiquidityPosition_filter
     lpStakingPositions_: LpStakingPosition_filter
     vrswStakingPositions_: VrswStakingPosition_filter
@@ -1423,6 +1448,7 @@ input User_filter {
 
 enum User_orderBy {
     id
+    vrswLockedPositionsNumber
     liquidityPositions
     lpStakingPositions
     vrswStakingPositions
@@ -1520,6 +1546,7 @@ enum VrswStakingPosition_orderBy {
     id
     user
     user__id
+    user__vrswLockedPositionsNumber
     amount
     lockDue
     discountFactor

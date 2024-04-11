@@ -1379,6 +1379,14 @@ const schemaAST = {
                     kind: 'EnumValueDefinition',
                     name: {
                         kind: 'Name',
+                        value: 'user__vrswLockedPositionsNumber',
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'EnumValueDefinition',
+                    name: {
+                        kind: 'Name',
                         value: 'pair',
                     },
                     directives: [],
@@ -1476,6 +1484,14 @@ const schemaAST = {
                     name: {
                         kind: 'Name',
                         value: 'pair__lastSwapBlock',
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'EnumValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'pair__lastSwapTimestamp',
                     },
                     directives: [],
                 },
@@ -2787,6 +2803,14 @@ const schemaAST = {
                     kind: 'EnumValueDefinition',
                     name: {
                         kind: 'Name',
+                        value: 'user__vrswLockedPositionsNumber',
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'EnumValueDefinition',
+                    name: {
+                        kind: 'Name',
                         value: 'pair',
                     },
                     directives: [],
@@ -2884,6 +2908,14 @@ const schemaAST = {
                     name: {
                         kind: 'Name',
                         value: 'pair__lastSwapBlock',
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'EnumValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'pair__lastSwapTimestamp',
                     },
                     directives: [],
                 },
@@ -3236,6 +3268,25 @@ const schemaAST = {
                     name: {
                         kind: 'Name',
                         value: 'lastSwapBlock',
+                    },
+                    arguments: [],
+                    type: {
+                        kind: 'NonNullType',
+                        type: {
+                            kind: 'NamedType',
+                            name: {
+                                kind: 'Name',
+                                value: 'BigInt',
+                            },
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'FieldDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'lastSwapTimestamp',
                     },
                     arguments: [],
                     type: {
@@ -4912,6 +4963,14 @@ const schemaAST = {
                     kind: 'EnumValueDefinition',
                     name: {
                         kind: 'Name',
+                        value: 'pair__lastSwapTimestamp',
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'EnumValueDefinition',
+                    name: {
+                        kind: 'Name',
                         value: 'pair__allocationPoints',
                     },
                     directives: [],
@@ -6083,6 +6142,14 @@ const schemaAST = {
                     name: {
                         kind: 'Name',
                         value: 'pair__lastSwapBlock',
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'EnumValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'pair__lastSwapTimestamp',
                     },
                     directives: [],
                 },
@@ -8378,6 +8445,138 @@ const schemaAST = {
                     kind: 'InputValueDefinition',
                     name: {
                         kind: 'Name',
+                        value: 'lastSwapTimestamp',
+                    },
+                    type: {
+                        kind: 'NamedType',
+                        name: {
+                            kind: 'Name',
+                            value: 'BigInt',
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'lastSwapTimestamp_not',
+                    },
+                    type: {
+                        kind: 'NamedType',
+                        name: {
+                            kind: 'Name',
+                            value: 'BigInt',
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'lastSwapTimestamp_gt',
+                    },
+                    type: {
+                        kind: 'NamedType',
+                        name: {
+                            kind: 'Name',
+                            value: 'BigInt',
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'lastSwapTimestamp_lt',
+                    },
+                    type: {
+                        kind: 'NamedType',
+                        name: {
+                            kind: 'Name',
+                            value: 'BigInt',
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'lastSwapTimestamp_gte',
+                    },
+                    type: {
+                        kind: 'NamedType',
+                        name: {
+                            kind: 'Name',
+                            value: 'BigInt',
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'lastSwapTimestamp_lte',
+                    },
+                    type: {
+                        kind: 'NamedType',
+                        name: {
+                            kind: 'Name',
+                            value: 'BigInt',
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'lastSwapTimestamp_in',
+                    },
+                    type: {
+                        kind: 'ListType',
+                        type: {
+                            kind: 'NonNullType',
+                            type: {
+                                kind: 'NamedType',
+                                name: {
+                                    kind: 'Name',
+                                    value: 'BigInt',
+                                },
+                            },
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'lastSwapTimestamp_not_in',
+                    },
+                    type: {
+                        kind: 'ListType',
+                        type: {
+                            kind: 'NonNullType',
+                            type: {
+                                kind: 'NamedType',
+                                name: {
+                                    kind: 'Name',
+                                    value: 'BigInt',
+                                },
+                            },
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
                         value: 'whitelist_',
                     },
                     type: {
@@ -9303,6 +9502,14 @@ const schemaAST = {
                     name: {
                         kind: 'Name',
                         value: 'lastSwapBlock',
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'EnumValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'lastSwapTimestamp',
                     },
                     directives: [],
                 },
@@ -16230,6 +16437,25 @@ const schemaAST = {
                     kind: 'FieldDefinition',
                     name: {
                         kind: 'Name',
+                        value: 'vrswLockedPositionsNumber',
+                    },
+                    arguments: [],
+                    type: {
+                        kind: 'NonNullType',
+                        type: {
+                            kind: 'NamedType',
+                            name: {
+                                kind: 'Name',
+                                value: 'BigInt',
+                            },
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'FieldDefinition',
+                    name: {
+                        kind: 'Name',
                         value: 'liquidityPositions',
                     },
                     arguments: [
@@ -16691,6 +16917,138 @@ const schemaAST = {
                     kind: 'InputValueDefinition',
                     name: {
                         kind: 'Name',
+                        value: 'vrswLockedPositionsNumber',
+                    },
+                    type: {
+                        kind: 'NamedType',
+                        name: {
+                            kind: 'Name',
+                            value: 'BigInt',
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'vrswLockedPositionsNumber_not',
+                    },
+                    type: {
+                        kind: 'NamedType',
+                        name: {
+                            kind: 'Name',
+                            value: 'BigInt',
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'vrswLockedPositionsNumber_gt',
+                    },
+                    type: {
+                        kind: 'NamedType',
+                        name: {
+                            kind: 'Name',
+                            value: 'BigInt',
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'vrswLockedPositionsNumber_lt',
+                    },
+                    type: {
+                        kind: 'NamedType',
+                        name: {
+                            kind: 'Name',
+                            value: 'BigInt',
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'vrswLockedPositionsNumber_gte',
+                    },
+                    type: {
+                        kind: 'NamedType',
+                        name: {
+                            kind: 'Name',
+                            value: 'BigInt',
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'vrswLockedPositionsNumber_lte',
+                    },
+                    type: {
+                        kind: 'NamedType',
+                        name: {
+                            kind: 'Name',
+                            value: 'BigInt',
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'vrswLockedPositionsNumber_in',
+                    },
+                    type: {
+                        kind: 'ListType',
+                        type: {
+                            kind: 'NonNullType',
+                            type: {
+                                kind: 'NamedType',
+                                name: {
+                                    kind: 'Name',
+                                    value: 'BigInt',
+                                },
+                            },
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'vrswLockedPositionsNumber_not_in',
+                    },
+                    type: {
+                        kind: 'ListType',
+                        type: {
+                            kind: 'NonNullType',
+                            type: {
+                                kind: 'NamedType',
+                                name: {
+                                    kind: 'Name',
+                                    value: 'BigInt',
+                                },
+                            },
+                        },
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'InputValueDefinition',
+                    name: {
+                        kind: 'Name',
                         value: 'liquidityPositions_',
                     },
                     type: {
@@ -16803,6 +17161,14 @@ const schemaAST = {
                     name: {
                         kind: 'Name',
                         value: 'id',
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'EnumValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'vrswLockedPositionsNumber',
                     },
                     directives: [],
                 },
@@ -18190,6 +18556,14 @@ const schemaAST = {
                     name: {
                         kind: 'Name',
                         value: 'user__id',
+                    },
+                    directives: [],
+                },
+                {
+                    kind: 'EnumValueDefinition',
+                    name: {
+                        kind: 'Name',
+                        value: 'user__vrswLockedPositionsNumber',
                     },
                     directives: [],
                 },

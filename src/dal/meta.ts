@@ -1,11 +1,12 @@
-import { MetadataDocument, execute } from './.graphclient';
+import { queryMeta } from './utils/execute';
+import { Chain } from '../entities/chain';
 
-export async function getBlockNumber(): Promise<number> {
-    const meta = await execute(MetadataDocument, {});
+export async function getBlockNumber(chain: Chain): Promise<number> {
+    const meta = await queryMeta(chain);
     return meta.data._meta.block.number;
 }
 
-export async function getBlockTimestamp(): Promise<number> {
-    const meta = await execute(MetadataDocument, {});
+export async function getBlockTimestamp(chain: Chain): Promise<number> {
+    const meta = await queryMeta(chain);
     return meta.data._meta.block.timestamp;
 }

@@ -32,8 +32,8 @@ import {
 import { MeshStore, FsStoreStorageAdapter } from '@graphql-mesh/store';
 import { path as pathModule } from '@graphql-mesh/cross-helpers';
 import { ImportFn } from '@graphql-mesh/types';
-import type { GraphTestTypes } from './sources/graph-test/types';
-import * as importedModule$0 from './sources/graph-test/introspectionSchema';
+import type { GraphTestArbTypes } from './sources/graph-test-arb/types';
+import * as importedModule$0 from './sources/graph-test-arb/introspectionSchema';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = {
@@ -151,6 +151,7 @@ export type LiquidityPosition_orderBy =
     | 'id'
     | 'user'
     | 'user__id'
+    | 'user__vrswLockedPositionsNumber'
     | 'pair'
     | 'pair__id'
     | 'pair__balance0'
@@ -164,6 +165,7 @@ export type LiquidityPosition_orderBy =
     | 'pair__totalMu'
     | 'pair__totalStaked'
     | 'pair__lastSwapBlock'
+    | 'pair__lastSwapTimestamp'
     | 'pair__allocationPoints'
     | 'pair__token0Price'
     | 'pair__token1Price'
@@ -256,6 +258,7 @@ export type LpStakingPosition_orderBy =
     | 'id'
     | 'user'
     | 'user__id'
+    | 'user__vrswLockedPositionsNumber'
     | 'pair'
     | 'pair__id'
     | 'pair__balance0'
@@ -269,6 +272,7 @@ export type LpStakingPosition_orderBy =
     | 'pair__totalMu'
     | 'pair__totalStaked'
     | 'pair__lastSwapBlock'
+    | 'pair__lastSwapTimestamp'
     | 'pair__allocationPoints'
     | 'pair__token0Price'
     | 'pair__token1Price'
@@ -295,6 +299,7 @@ export type Pair = {
     totalMu: Scalars['BigDecimal'];
     totalStaked: Scalars['BigDecimal'];
     lastSwapBlock: Scalars['BigInt'];
+    lastSwapTimestamp: Scalars['BigInt'];
     whitelist: Array<PairWhitelist>;
     allocationPoints: Scalars['BigInt'];
     token0Price: Scalars['BigDecimal'];
@@ -416,6 +421,7 @@ export type PairReserve_orderBy =
     | 'pair__totalMu'
     | 'pair__totalStaked'
     | 'pair__lastSwapBlock'
+    | 'pair__lastSwapTimestamp'
     | 'pair__allocationPoints'
     | 'pair__token0Price'
     | 'pair__token1Price'
@@ -512,6 +518,7 @@ export type PairWhitelist_orderBy =
     | 'pair__totalMu'
     | 'pair__totalStaked'
     | 'pair__lastSwapBlock'
+    | 'pair__lastSwapTimestamp'
     | 'pair__allocationPoints'
     | 'pair__token0Price'
     | 'pair__token1Price'
@@ -657,6 +664,14 @@ export type Pair_filter = {
     lastSwapBlock_lte?: InputMaybe<Scalars['BigInt']>;
     lastSwapBlock_in?: InputMaybe<Array<Scalars['BigInt']>>;
     lastSwapBlock_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
+    lastSwapTimestamp?: InputMaybe<Scalars['BigInt']>;
+    lastSwapTimestamp_not?: InputMaybe<Scalars['BigInt']>;
+    lastSwapTimestamp_gt?: InputMaybe<Scalars['BigInt']>;
+    lastSwapTimestamp_lt?: InputMaybe<Scalars['BigInt']>;
+    lastSwapTimestamp_gte?: InputMaybe<Scalars['BigInt']>;
+    lastSwapTimestamp_lte?: InputMaybe<Scalars['BigInt']>;
+    lastSwapTimestamp_in?: InputMaybe<Array<Scalars['BigInt']>>;
+    lastSwapTimestamp_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
     whitelist_?: InputMaybe<PairWhitelist_filter>;
     allocationPoints?: InputMaybe<Scalars['BigInt']>;
     allocationPoints_not?: InputMaybe<Scalars['BigInt']>;
@@ -728,6 +743,7 @@ export type Pair_orderBy =
     | 'totalMu'
     | 'totalStaked'
     | 'lastSwapBlock'
+    | 'lastSwapTimestamp'
     | 'whitelist'
     | 'allocationPoints'
     | 'token0Price'
@@ -1244,6 +1260,7 @@ export type TokenomicsParams_orderBy =
 
 export type User = {
     id: Scalars['ID'];
+    vrswLockedPositionsNumber: Scalars['BigInt'];
     liquidityPositions?: Maybe<Array<LiquidityPosition>>;
     lpStakingPositions?: Maybe<Array<LpStakingPosition>>;
     vrswStakingPositions?: Maybe<Array<VrswStakingPosition>>;
@@ -1282,6 +1299,14 @@ export type User_filter = {
     id_lte?: InputMaybe<Scalars['ID']>;
     id_in?: InputMaybe<Array<Scalars['ID']>>;
     id_not_in?: InputMaybe<Array<Scalars['ID']>>;
+    vrswLockedPositionsNumber?: InputMaybe<Scalars['BigInt']>;
+    vrswLockedPositionsNumber_not?: InputMaybe<Scalars['BigInt']>;
+    vrswLockedPositionsNumber_gt?: InputMaybe<Scalars['BigInt']>;
+    vrswLockedPositionsNumber_lt?: InputMaybe<Scalars['BigInt']>;
+    vrswLockedPositionsNumber_gte?: InputMaybe<Scalars['BigInt']>;
+    vrswLockedPositionsNumber_lte?: InputMaybe<Scalars['BigInt']>;
+    vrswLockedPositionsNumber_in?: InputMaybe<Array<Scalars['BigInt']>>;
+    vrswLockedPositionsNumber_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
     liquidityPositions_?: InputMaybe<LiquidityPosition_filter>;
     lpStakingPositions_?: InputMaybe<LpStakingPosition_filter>;
     vrswStakingPositions_?: InputMaybe<VrswStakingPosition_filter>;
@@ -1293,6 +1318,7 @@ export type User_filter = {
 
 export type User_orderBy =
     | 'id'
+    | 'vrswLockedPositionsNumber'
     | 'liquidityPositions'
     | 'lpStakingPositions'
     | 'vrswStakingPositions';
@@ -1387,6 +1413,7 @@ export type VrswStakingPosition_orderBy =
     | 'id'
     | 'user'
     | 'user__id'
+    | 'user__vrswLockedPositionsNumber'
     | 'amount'
     | 'lockDue'
     | 'discountFactor'
@@ -1747,6 +1774,11 @@ export type PairResolvers<
         ContextType
     >;
     lastSwapBlock?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
+    lastSwapTimestamp?: Resolver<
+        ResolversTypes['BigInt'],
+        ParentType,
+        ContextType
+    >;
     whitelist?: Resolver<
         Array<ResolversTypes['PairWhitelist']>,
         ParentType,
@@ -2154,6 +2186,11 @@ export type UserResolvers<
         ResolversParentTypes['User'] = ResolversParentTypes['User'],
 > = ResolversObject<{
     id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+    vrswLockedPositionsNumber?: Resolver<
+        ResolversTypes['BigInt'],
+        ParentType,
+        ContextType
+    >;
     liquidityPositions?: Resolver<
         Maybe<Array<ResolversTypes['LiquidityPosition']>>,
         ParentType,
@@ -2252,7 +2289,7 @@ export type DirectiveResolvers<ContextType = MeshContext> = ResolversObject<{
     derivedFrom?: derivedFromDirectiveResolver<any, any, ContextType>;
 }>;
 
-export type MeshContext = GraphTestTypes.Context & BaseMeshContext;
+export type MeshContext = GraphTestArbTypes.Context & BaseMeshContext;
 
 const baseDir = pathModule.join(
     typeof __dirname === 'string' ? __dirname : '/',
@@ -2269,7 +2306,7 @@ const importFn: ImportFn = <T>(moduleId: string) => {
         .join('/')
         .replace(baseDir + '/', '');
     switch (relativeModuleId) {
-        case '.graphclient/sources/graph-test/introspectionSchema':
+        case '.graphclient/sources/graph-test-arb/introspectionSchema':
             return Promise.resolve(importedModule$0) as T;
 
         default:
@@ -2308,25 +2345,25 @@ export async function getMeshOptions(): Promise<GetMeshOptions> {
     const sources: MeshResolvedSource[] = [];
     const transforms: MeshTransform[] = [];
     const additionalEnvelopPlugins: MeshPlugin<any>[] = [];
-    const graphTestTransforms = [];
+    const graphTestArbTransforms = [];
     const additionalTypeDefs = [] as any[];
-    const graphTestHandler = new GraphqlHandler({
-        name: 'graph-test',
+    const graphTestArbHandler = new GraphqlHandler({
+        name: 'graph-test-arb',
         config: {
             endpoint:
-                'https://api.studio.thegraph.com/query/65471/graph-test/version/latest',
+                'https://api.studio.thegraph.com/query/65471/graph-test-arb/version/latest',
         },
         baseDir,
         cache,
         pubsub,
-        store: sourcesStore.child('graph-test'),
-        logger: logger.child('graph-test'),
+        store: sourcesStore.child('graph-test-arb'),
+        logger: logger.child('graph-test-arb'),
         importFn,
     });
     sources[0] = {
-        name: 'graph-test',
-        handler: graphTestHandler,
-        transforms: graphTestTransforms,
+        name: 'graph-test-arb',
+        handler: graphTestArbHandler,
+        transforms: graphTestArbTransforms,
     };
     const additionalResolvers = [] as any[];
     const merger = new (BareMerger as any)({
@@ -2431,6 +2468,7 @@ export type PairsQuery = {
             | 'reserveRatio'
             | 'blocksDelay'
             | 'lastSwapBlock'
+            | 'lastSwapTimestamp'
         > & {
             token0: Pick<Token, 'id' | 'decimals'>;
             token1: Pick<Token, 'id' | 'decimals'>;
@@ -2474,6 +2512,7 @@ export const PairsDocument = gql`
             reserveRatio
             blocksDelay
             lastSwapBlock
+            lastSwapTimestamp
             whitelist {
                 token {
                     id

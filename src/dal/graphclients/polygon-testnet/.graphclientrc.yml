@@ -5,5 +5,5 @@ sources:
               endpoint: https://api.studio.thegraph.com/query/65471/graph-test/version/latest
 
 documents:
-    - ./graphql/pairs.graphql
-    - ./graphql/meta.graphql
+    - ../../graphql/pairs.graphql
+    - ../../graphql/meta.graphql

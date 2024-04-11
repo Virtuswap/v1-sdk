@@ -2,9 +2,9 @@ import { ethers } from 'ethers';
 
 import { Token, TokenWithBalance } from '../entities/token';
 import { Pair, PairReserve } from '../entities/pair';
-import { Chain } from '../entities/chain';
+import { getBlockTimestamp, getBlockNumber } from '../dal/meta';
+import { Chain, chainInfo } from '../entities/chain';
 import { Address } from '../entities/utils';
-import { getBlockNumber, getBlockTimestamp } from '../dal/meta';
 import { getAllPairs } from '../dal/pairs';
 import { abi as vRouterAbi } from '../artifacts/vRouter.json';
 import cloneDeep from 'lodash.clonedeep';
@@ -30,6 +30,7 @@ export type Route = {
     minTokenOut: TokenWithBalance;
     amountInUsd: string;
     amountOutUsd: string;
+    chain: Chain;
     steps: Array<RouteNode>;
 };
 
@@ -55,16 +56,13 @@ export default class Router {
         swapOptions?: SwapOptions
     ): Promise<Route> {
         if (swapOptions) this.swapOptions = swapOptions;
-        const blockNumber = await (chain === Chain.ARBITRUM_MAINNET ||
-        chain === Chain.ARBITRUM_TESTNET
-            ? getBlockTimestamp()
-            : getBlockNumber());
-        this.pairsCache = await getAllPairs();
+        this.pairsCache = await getAllPairs(chain);
+        this.directedPairsCache.clear();
 
-        const candidates = this.getSwapCandidates(
+        const candidates = await this.getSwapCandidates(
             tokenIn,
             tokenOut,
-            blockNumber
+            chain
         );
         let maxRoute = new Array<ethers.BigNumber>(candidates.length).fill(
             ethers.BigNumber.from(0)
@@ -115,6 +113,7 @@ export default class Router {
             amount.sub(amount.div(this.swapOptions.slippage))
         );
         return {
+            chain,
             tokenIn,
             tokenOut: TokenWithBalance.fromBigNumber(
                 tokenOut,
@@ -146,9 +145,12 @@ export default class Router {
     }
 
     async executeRoute(route: Route, signer: ethers.Signer): Promise<void> {
-        // TODO: add router address
-        const routerContract = new ethers.Contract('', vRouterAbi, signer);
-        const futureTs = (await getBlockTimestamp()) + 100000;
+        const routerContract = new ethers.Contract(
+            chainInfo[route.chain].routerAddress.toString(),
+            vRouterAbi,
+            signer
+        );
+        const futureTs = (await getBlockTimestamp(route.chain)) + 100000;
         const multicallData = route.steps.map((step) => {
             let functionName = 'undefined';
             let params: any[] = [];
@@ -188,12 +190,12 @@ export default class Router {
     private pairsCache: Array<Pair>;
     private directedPairsCache: Map<string, DirectedPair>;
 
-    private getSwapCandidates(
+    private async getSwapCandidates(
         tokenIn: Token,
         tokenOut: Token,
-        blockNumber: number
-    ): Array<SwapCandidate> {
-        return this.getVirtualSwapPairs(tokenIn, tokenOut, blockNumber)
+        chain: Chain
+    ): Promise<Array<SwapCandidate>> {
+        return (await this.getVirtualSwapPairs(tokenIn, tokenOut, chain))
             .map(
                 ([jkPool, ikPool]) =>
                     new ReserveCandidate(jkPool, ikPool) as SwapCandidate
@@ -319,22 +321,25 @@ export default class Router {
         return result;
     }
 
-    private getVirtualSwapPairs(
+    private async getVirtualSwapPairs(
         tokenIn: Token,
         tokenOut: Token,
-        blockNumber: number
-    ) {
+        chain: Chain
+    ): Promise<Array<[DirectedPair, DirectedPair]>> {
         let result: [DirectedPair, DirectedPair][] = [];
         const jkCandidates = this.pairsCache.filter(
             (pair) =>
                 pair.allowsTokenAsReserve(tokenIn.address) &&
                 pair.hasTokenWithAddress(tokenOut.address)
         );
+        const blockNumber = await (chainInfo[chain].useBlockTimestamp
+            ? getBlockTimestamp(chain)
+            : getBlockNumber(chain));
         const ikCandidates = this.pairsCache.filter(
             (pair) =>
                 pair.hasTokenWithAddress(tokenIn.address) &&
                 !pair.hasTokenWithAddress(tokenOut.address) &&
-                !pair.isBlockedForVirtualTrading(blockNumber)
+                !pair.isBlockedForVirtualTrading(chain, blockNumber)
         );
 
         jkCandidates.forEach((jkPair) => {

@@ -3,7 +3,7 @@
 import { InContextSdkMethod } from '@graphql-mesh/types';
 import { MeshContext } from '@graphql-mesh/runtime';
 
-export namespace GraphTestTypes {
+export namespace GraphTestArbTypes {
     export type Maybe<T> = T | null;
     export type InputMaybe<T> = Maybe<T>;
     export type Exact<T extends { [key: string]: unknown }> = {
@@ -117,6 +117,7 @@ export namespace GraphTestTypes {
         | 'id'
         | 'user'
         | 'user__id'
+        | 'user__vrswLockedPositionsNumber'
         | 'pair'
         | 'pair__id'
         | 'pair__balance0'
@@ -130,6 +131,7 @@ export namespace GraphTestTypes {
         | 'pair__totalMu'
         | 'pair__totalStaked'
         | 'pair__lastSwapBlock'
+        | 'pair__lastSwapTimestamp'
         | 'pair__allocationPoints'
         | 'pair__token0Price'
         | 'pair__token1Price'
@@ -222,6 +224,7 @@ export namespace GraphTestTypes {
         | 'id'
         | 'user'
         | 'user__id'
+        | 'user__vrswLockedPositionsNumber'
         | 'pair'
         | 'pair__id'
         | 'pair__balance0'
@@ -235,6 +238,7 @@ export namespace GraphTestTypes {
         | 'pair__totalMu'
         | 'pair__totalStaked'
         | 'pair__lastSwapBlock'
+        | 'pair__lastSwapTimestamp'
         | 'pair__allocationPoints'
         | 'pair__token0Price'
         | 'pair__token1Price'
@@ -261,6 +265,7 @@ export namespace GraphTestTypes {
         totalMu: Scalars['BigDecimal'];
         totalStaked: Scalars['BigDecimal'];
         lastSwapBlock: Scalars['BigInt'];
+        lastSwapTimestamp: Scalars['BigInt'];
         whitelist: Array<PairWhitelist>;
         allocationPoints: Scalars['BigInt'];
         token0Price: Scalars['BigDecimal'];
@@ -382,6 +387,7 @@ export namespace GraphTestTypes {
         | 'pair__totalMu'
         | 'pair__totalStaked'
         | 'pair__lastSwapBlock'
+        | 'pair__lastSwapTimestamp'
         | 'pair__allocationPoints'
         | 'pair__token0Price'
         | 'pair__token1Price'
@@ -478,6 +484,7 @@ export namespace GraphTestTypes {
         | 'pair__totalMu'
         | 'pair__totalStaked'
         | 'pair__lastSwapBlock'
+        | 'pair__lastSwapTimestamp'
         | 'pair__allocationPoints'
         | 'pair__token0Price'
         | 'pair__token1Price'
@@ -623,6 +630,14 @@ export namespace GraphTestTypes {
         lastSwapBlock_lte?: InputMaybe<Scalars['BigInt']>;
         lastSwapBlock_in?: InputMaybe<Array<Scalars['BigInt']>>;
         lastSwapBlock_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
+        lastSwapTimestamp?: InputMaybe<Scalars['BigInt']>;
+        lastSwapTimestamp_not?: InputMaybe<Scalars['BigInt']>;
+        lastSwapTimestamp_gt?: InputMaybe<Scalars['BigInt']>;
+        lastSwapTimestamp_lt?: InputMaybe<Scalars['BigInt']>;
+        lastSwapTimestamp_gte?: InputMaybe<Scalars['BigInt']>;
+        lastSwapTimestamp_lte?: InputMaybe<Scalars['BigInt']>;
+        lastSwapTimestamp_in?: InputMaybe<Array<Scalars['BigInt']>>;
+        lastSwapTimestamp_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
         whitelist_?: InputMaybe<PairWhitelist_filter>;
         allocationPoints?: InputMaybe<Scalars['BigInt']>;
         allocationPoints_not?: InputMaybe<Scalars['BigInt']>;
@@ -694,6 +709,7 @@ export namespace GraphTestTypes {
         | 'totalMu'
         | 'totalStaked'
         | 'lastSwapBlock'
+        | 'lastSwapTimestamp'
         | 'whitelist'
         | 'allocationPoints'
         | 'token0Price'
@@ -1210,6 +1226,7 @@ export namespace GraphTestTypes {
 
     export type User = {
         id: Scalars['ID'];
+        vrswLockedPositionsNumber: Scalars['BigInt'];
         liquidityPositions?: Maybe<Array<LiquidityPosition>>;
         lpStakingPositions?: Maybe<Array<LpStakingPosition>>;
         vrswStakingPositions?: Maybe<Array<VrswStakingPosition>>;
@@ -1248,6 +1265,14 @@ export namespace GraphTestTypes {
         id_lte?: InputMaybe<Scalars['ID']>;
         id_in?: InputMaybe<Array<Scalars['ID']>>;
         id_not_in?: InputMaybe<Array<Scalars['ID']>>;
+        vrswLockedPositionsNumber?: InputMaybe<Scalars['BigInt']>;
+        vrswLockedPositionsNumber_not?: InputMaybe<Scalars['BigInt']>;
+        vrswLockedPositionsNumber_gt?: InputMaybe<Scalars['BigInt']>;
+        vrswLockedPositionsNumber_lt?: InputMaybe<Scalars['BigInt']>;
+        vrswLockedPositionsNumber_gte?: InputMaybe<Scalars['BigInt']>;
+        vrswLockedPositionsNumber_lte?: InputMaybe<Scalars['BigInt']>;
+        vrswLockedPositionsNumber_in?: InputMaybe<Array<Scalars['BigInt']>>;
+        vrswLockedPositionsNumber_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
         liquidityPositions_?: InputMaybe<LiquidityPosition_filter>;
         lpStakingPositions_?: InputMaybe<LpStakingPosition_filter>;
         vrswStakingPositions_?: InputMaybe<VrswStakingPosition_filter>;
@@ -1259,6 +1284,7 @@ export namespace GraphTestTypes {
 
     export type User_orderBy =
         | 'id'
+        | 'vrswLockedPositionsNumber'
         | 'liquidityPositions'
         | 'lpStakingPositions'
         | 'vrswStakingPositions';
@@ -1353,6 +1379,7 @@ export namespace GraphTestTypes {
         | 'id'
         | 'user'
         | 'user__id'
+        | 'user__vrswLockedPositionsNumber'
         | 'amount'
         | 'lockDue'
         | 'discountFactor'
@@ -1605,7 +1632,7 @@ export namespace GraphTestTypes {
     };
 
     export type Context = {
-        ['graph-test']: {
+        ['graph-test-arb']: {
             Query: QuerySdk;
             Mutation: MutationSdk;
             Subscription: SubscriptionSdk;
