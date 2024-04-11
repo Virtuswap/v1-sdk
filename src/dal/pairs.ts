@@ -14,6 +14,7 @@ export async function getAllPairs(): Promise<Array<Pair>> {
             TokenWithBalance.fromDecimal(pairToken1, pair.balance1),
             parseInt(pair.blocksDelay),
             parseInt(pair.lastSwapBlock),
+            parseInt(pair.lastSwapTimestamp),
             parseInt(pair.fee),
             parseInt(pair.vFee),
             parseInt(pair.maxReserveRatio),

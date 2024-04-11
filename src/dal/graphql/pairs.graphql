@@ -17,6 +17,7 @@ query Pairs {
         reserveRatio
         blocksDelay
         lastSwapBlock
+        lastSwapTimestamp
         whitelist {
             token {
                 id

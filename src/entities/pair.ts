@@ -24,6 +24,7 @@ export class Pair {
     readonly token1: TokenWithBalance;
     readonly blocksDelay: number;
     readonly lastSwapBlock: number;
+    readonly lastSwapTimestamp: number;
     readonly fee: number;
     readonly vFee: number;
     readonly maxReserveRatio: number;
@@ -37,6 +38,7 @@ export class Pair {
         token1: TokenWithBalance,
         blocksDelay: number,
         lastSwapBlock: number,
+        lastSwapTimestamp: number,
         fee: number,
         vFee: number,
         maxReserveRatio: number,
@@ -49,6 +51,7 @@ export class Pair {
         this.token1 = token1;
         this.blocksDelay = blocksDelay;
         this.lastSwapBlock = lastSwapBlock;
+        this.lastSwapTimestamp = lastSwapTimestamp;
         this.fee = fee;
         this.vFee = vFee;
         this.maxReserveRatio = maxReserveRatio;
@@ -79,6 +82,7 @@ export class Pair {
     }
 
     isBlockedForVirtualTrading(blockNumber: number): boolean {
+        // TODO: for arbitrum compare lastSwapTimestamp
         return blockNumber < this.blocksDelay + this.lastSwapBlock;
     }
 
