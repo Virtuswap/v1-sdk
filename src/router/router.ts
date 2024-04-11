@@ -7,7 +7,7 @@ import { Address } from '../entities/utils';
 import { getBlockNumber, getBlockTimestamp } from '../dal/meta';
 import { getAllPairs } from '../dal/pairs';
 import { abi as vRouterAbi } from '../artifacts/vRouter.json';
-import * as _ from 'lodash';
+import cloneDeep from 'lodash.clonedeep';
 
 export enum SwapType {
     UNDEFINED,
@@ -301,7 +301,7 @@ export default class Router {
         candidates: Array<SwapCandidate>,
         route: Array<ethers.BigNumber>
     ): Array<ethers.BigNumber> {
-        let localCandidates = _.cloneDeep(candidates);
+        let localCandidates = cloneDeep(candidates);
         let amountsOut = new Array(candidates.length).fill(
             ethers.BigNumber.from(0)
         );
