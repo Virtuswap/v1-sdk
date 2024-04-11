@@ -14,7 +14,7 @@ export enum SwapType {
     DIRECT,
     TRIANGULAR,
     VIRTUAL,
-};
+}
 
 export type RouteNode = {
     path: Array<Address>;
@@ -43,18 +43,29 @@ export default class Router {
     constructor(slippage = 1000) {
         this.swapOptions = {
             slippage,
-        }
+        };
         this.pairsCache = new Array();
         this.directedPairsCache = new Map();
     }
 
-    async getRoute(tokenIn: TokenWithBalance, tokenOut: Token, chain: Chain, swapOptions?: SwapOptions): Promise<Route> {
-        if (swapOptions)
-            this.swapOptions = swapOptions;
-        const blockNumber = await ((chain === Chain.ARBITRUM_MAINNET || chain === Chain.ARBITRUM_TESTNET) ? getBlockTimestamp() : getBlockNumber());
+    async getRoute(
+        tokenIn: TokenWithBalance,
+        tokenOut: Token,
+        chain: Chain,
+        swapOptions?: SwapOptions
+    ): Promise<Route> {
+        if (swapOptions) this.swapOptions = swapOptions;
+        const blockNumber = await (chain === Chain.ARBITRUM_MAINNET ||
+        chain === Chain.ARBITRUM_TESTNET
+            ? getBlockTimestamp()
+            : getBlockNumber());
         this.pairsCache = await getAllPairs();
 
-        const candidates = this.getSwapCandidates(tokenIn, tokenOut, blockNumber);
+        const candidates = this.getSwapCandidates(
+            tokenIn,
+            tokenOut,
+            blockNumber
+        );
         let maxRoute = new Array<ethers.BigNumber>(candidates.length).fill(
             ethers.BigNumber.from(0)
         );
@@ -105,8 +116,20 @@ export default class Router {
         );
         return {
             tokenIn,
-            tokenOut: TokenWithBalance.fromBigNumber(tokenOut, amountsOut.reduce((sum, prev) => sum.add(prev), ethers.BigNumber.from('0'))),
-            minTokenOut: TokenWithBalance.fromBigNumber(tokenOut, minAmountsOut.reduce((sum, prev) => sum.add(prev), ethers.BigNumber.from('0'))),
+            tokenOut: TokenWithBalance.fromBigNumber(
+                tokenOut,
+                amountsOut.reduce(
+                    (sum, prev) => sum.add(prev),
+                    ethers.BigNumber.from('0')
+                )
+            ),
+            minTokenOut: TokenWithBalance.fromBigNumber(
+                tokenOut,
+                minAmountsOut.reduce(
+                    (sum, prev) => sum.add(prev),
+                    ethers.BigNumber.from('0')
+                )
+            ),
             // TODO: add tokens prices
             amountInUsd: '0',
             amountOutUsd: '0',
@@ -118,14 +141,14 @@ export default class Router {
                         minAmountsOut[index]
                     )
                 )
-                .filter((routerNode) => !routerNode.amountInBn.isZero())
+                .filter((routerNode) => !routerNode.amountInBn.isZero()),
         };
     }
 
     async executeRoute(route: Route, signer: ethers.Signer): Promise<void> {
         // TODO: add router address
         const routerContract = new ethers.Contract('', vRouterAbi, signer);
-        const futureTs = await getBlockTimestamp() + 100000;
+        const futureTs = (await getBlockTimestamp()) + 100000;
         const multicallData = route.steps.map((step) => {
             let functionName = 'undefined';
             let params: any[] = [];
@@ -134,15 +157,30 @@ export default class Router {
                 case SwapType.DIRECT:
                 case SwapType.TRIANGULAR:
                     functionName = 'swapExactTokensForTokens';
-                    params = [step.path.map((value) => value.toString()), step.amountInBn, step.minAmountOutBn, signer.getAddress(), futureTs];
+                    params = [
+                        step.path.map((value) => value.toString()),
+                        step.amountInBn,
+                        step.minAmountOutBn,
+                        signer.getAddress(),
+                        futureTs,
+                    ];
                     break;
                 case SwapType.VIRTUAL:
-                    functionName = 'swapReserveExactTokensForTokens'; 
-                    params = [step.path.map((value) => value.toString()), step.amountInBn, step.minAmountOutBn, signer.getAddress(), futureTs];
+                    functionName = 'swapReserveExactTokensForTokens';
+                    params = [
+                        step.path.map((value) => value.toString()),
+                        step.amountInBn,
+                        step.minAmountOutBn,
+                        signer.getAddress(),
+                        futureTs,
+                    ];
                     break;
                 default:
             }
-            return routerContract.interface.encodeFunctionData(functionName, params);
+            return routerContract.interface.encodeFunctionData(
+                functionName,
+                params
+            );
         });
         await routerContract.multicall(multicallData);
     }
@@ -150,16 +188,31 @@ export default class Router {
     private pairsCache: Array<Pair>;
     private directedPairsCache: Map<string, DirectedPair>;
 
-    private getSwapCandidates(tokenIn: Token, tokenOut: Token, blockNumber: number): Array<SwapCandidate> {
-        return this.getVirtualSwapPairs(tokenIn, tokenOut, blockNumber).map(
-            ([jkPool, ikPool]) => 
-            new ReserveCandidate(jkPool, ikPool) as SwapCandidate
-        ).concat(this.getTriangularSwapPairs(tokenIn, tokenOut).map(
-            ([triangularPool0, triangularPool1]) => 
-            new TriangularCandidate(triangularPool0, triangularPool1) as SwapCandidate
-        )).concat(this.getDirectSwapPairs(tokenIn, tokenOut).map((directedPool) =>
-            new DirectCandidate(directedPool) as SwapCandidate
-        ));
+    private getSwapCandidates(
+        tokenIn: Token,
+        tokenOut: Token,
+        blockNumber: number
+    ): Array<SwapCandidate> {
+        return this.getVirtualSwapPairs(tokenIn, tokenOut, blockNumber)
+            .map(
+                ([jkPool, ikPool]) =>
+                    new ReserveCandidate(jkPool, ikPool) as SwapCandidate
+            )
+            .concat(
+                this.getTriangularSwapPairs(tokenIn, tokenOut).map(
+                    ([triangularPool0, triangularPool1]) =>
+                        new TriangularCandidate(
+                            triangularPool0,
+                            triangularPool1
+                        ) as SwapCandidate
+                )
+            )
+            .concat(
+                this.getDirectSwapPairs(tokenIn, tokenOut).map(
+                    (directedPool) =>
+                        new DirectCandidate(directedPool) as SwapCandidate
+                )
+            );
     }
 
     private getOrCreateDirectedPair(
@@ -170,7 +223,7 @@ export default class Router {
         fee: number,
         vFee: number,
         maxReserveRatio: number,
-        reserves: Array<PairReserve>,
+        reserves: Array<PairReserve>
     ): DirectedPair {
         if (!this.directedPairsCache.has(address.address)) {
             const newDirectedPair = new DirectedPair(
@@ -181,119 +234,148 @@ export default class Router {
                 reserves,
                 maxReserveRatio,
                 fee,
-                vFee,
+                vFee
             );
             this.directedPairsCache.set(address.address, newDirectedPair);
         }
         return this.directedPairsCache.get(address.address)!;
     }
 
-    private getDirectSwapPairs(tokenIn: Token, tokenOut: Token): Array<DirectedPair> {
+    private getDirectSwapPairs(
+        tokenIn: Token,
+        tokenOut: Token
+    ): Array<DirectedPair> {
         return this.pairsCache
             .filter(
                 (pair) =>
                     pair.hasTokenWithAddress(tokenIn.address) &&
                     pair.hasTokenWithAddress(tokenOut.address)
             )
-            .map((pair) => this.getOrCreateDirectedPair(
-                        pair.address,
-                        tokenIn.address.eq(pair.token0.address) ? pair.token0 : pair.token1,
-                        tokenOut.address.eq(pair.token0.address) ? pair.token0 : pair.token1,
-                        pair.token0,
-                        pair.fee,
-                        pair.vFee,
-                        pair.maxReserveRatio,
-                        pair.reserves,
-                    ));
+            .map((pair) =>
+                this.getOrCreateDirectedPair(
+                    pair.address,
+                    tokenIn.address.eq(pair.token0.address)
+                        ? pair.token0
+                        : pair.token1,
+                    tokenOut.address.eq(pair.token0.address)
+                        ? pair.token0
+                        : pair.token1,
+                    pair.token0,
+                    pair.fee,
+                    pair.vFee,
+                    pair.maxReserveRatio,
+                    pair.reserves
+                )
+            );
     }
 
     private getTriangularSwapPairs(tokenIn: Token, tokenOut: Token) {
         let result: Array<Array<DirectedPair>> = [];
-        const candidatesIn = this.pairsCache.filter((pair) => pair.hasTokenWithAddress(tokenIn.address));
-        const candidatesOut = this.pairsCache.filter((pair) => pair.hasTokenWithAddress(tokenOut.address));
+        const candidatesIn = this.pairsCache.filter((pair) =>
+            pair.hasTokenWithAddress(tokenIn.address)
+        );
+        const candidatesOut = this.pairsCache.filter((pair) =>
+            pair.hasTokenWithAddress(tokenOut.address)
+        );
         candidatesIn.forEach((pair0) => {
             candidatesOut.forEach((pair1) => {
-                if (pair0.address.neq(pair1.address) && pair0.hasCommonTokenWith(pair1)) {
+                if (
+                    pair0.address.neq(pair1.address) &&
+                    pair0.hasCommonTokenWith(pair1)
+                ) {
                     const commonToken = pair0.getCommonToken(pair1)!;
-                    const triangularSwapPair0 =
-                        this.getOrCreateDirectedPair(
-                            pair0.address,
-                            tokenIn.address.eq(pair0.token0.address) ? pair0.token0 : pair0.token1,
-                            commonToken.address.eq(pair0.token0.address) ? pair0.token0 : pair0.token1,
-                            pair0.token0,
-                            pair0.fee,
-                            pair0.vFee,
-                            pair0.maxReserveRatio,
-                            pair0.reserves,
-                        );
-                    const triangularSwapPair1 =
-                        this.getOrCreateDirectedPair(
-                            pair1.address,
-                            commonToken.address.eq(pair1.token0.address) ? pair1.token0 : pair1.token1,
-                            tokenOut.address.eq(pair1.token0.address) ? pair1.token0 : pair1.token1,
-                            pair1.token0,
-                            pair1.fee,
-                            pair1.vFee,
-                            pair1.maxReserveRatio,
-                            pair1.reserves,
-                        );
-                    result.push([
-                        triangularSwapPair0,
-                        triangularSwapPair1,
-                    ]);
+                    const triangularSwapPair0 = this.getOrCreateDirectedPair(
+                        pair0.address,
+                        tokenIn.address.eq(pair0.token0.address)
+                            ? pair0.token0
+                            : pair0.token1,
+                        commonToken.address.eq(pair0.token0.address)
+                            ? pair0.token0
+                            : pair0.token1,
+                        pair0.token0,
+                        pair0.fee,
+                        pair0.vFee,
+                        pair0.maxReserveRatio,
+                        pair0.reserves
+                    );
+                    const triangularSwapPair1 = this.getOrCreateDirectedPair(
+                        pair1.address,
+                        commonToken.address.eq(pair1.token0.address)
+                            ? pair1.token0
+                            : pair1.token1,
+                        tokenOut.address.eq(pair1.token0.address)
+                            ? pair1.token0
+                            : pair1.token1,
+                        pair1.token0,
+                        pair1.fee,
+                        pair1.vFee,
+                        pair1.maxReserveRatio,
+                        pair1.reserves
+                    );
+                    result.push([triangularSwapPair0, triangularSwapPair1]);
                 }
             });
         });
         return result;
     }
 
-    private getVirtualSwapPairs(tokenIn: Token, tokenOut: Token, blockNumber: number) {
+    private getVirtualSwapPairs(
+        tokenIn: Token,
+        tokenOut: Token,
+        blockNumber: number
+    ) {
         let result: [DirectedPair, DirectedPair][] = [];
-        const jkCandidates = this.pairsCache
-            .filter(
-                (pair) =>
-                    pair.allowsTokenAsReserve(tokenIn.address) &&
-                    pair.hasTokenWithAddress(tokenOut.address)
-            );
-        const ikCandidates = this.pairsCache
-                    .filter(
-                        (pair) =>
-                            pair.hasTokenWithAddress(tokenIn.address) &&
-                            !pair.hasTokenWithAddress(tokenOut.address) &&
-                            !pair.isBlockedForVirtualTrading(blockNumber)
-                    );
+        const jkCandidates = this.pairsCache.filter(
+            (pair) =>
+                pair.allowsTokenAsReserve(tokenIn.address) &&
+                pair.hasTokenWithAddress(tokenOut.address)
+        );
+        const ikCandidates = this.pairsCache.filter(
+            (pair) =>
+                pair.hasTokenWithAddress(tokenIn.address) &&
+                !pair.hasTokenWithAddress(tokenOut.address) &&
+                !pair.isBlockedForVirtualTrading(blockNumber)
+        );
 
         jkCandidates.forEach((jkPair) => {
-                ikCandidates.forEach((ikPair) => {
-                    if (ikPair.hasCommonTokenWith(jkPair)) {
-                        const commonToken = ikPair.getCommonToken(jkPair)!;
-                        if (commonToken.address.neq(tokenIn.address)) {
-                            result.push([
-                                this.getOrCreateDirectedPair(
-                                    jkPair.address,
-                                    commonToken.address.eq(jkPair.token0.address) ? jkPair.token0 : jkPair.token1,
-                                    tokenOut.address.eq(jkPair.token0.address) ? jkPair.token0 : jkPair.token1,
-                                    jkPair.token0,
-                                    jkPair.fee,
-                                    jkPair.vFee,
-                                    jkPair.maxReserveRatio,
-                                    jkPair.reserves,
-                                ),
-                                this.getOrCreateDirectedPair(
-                                    ikPair.address,
-                                    tokenIn.address.eq(ikPair.token0.address) ? ikPair.token0 : ikPair.token1,
-                                    commonToken.address.eq(ikPair.token0.address) ? ikPair.token0 : ikPair.token1,
-                                    ikPair.token0,
-                                    ikPair.fee,
-                                    ikPair.vFee,
-                                    ikPair.maxReserveRatio,
-                                    ikPair.reserves,
-                                ),
-                            ]);
-                        }
+            ikCandidates.forEach((ikPair) => {
+                if (ikPair.hasCommonTokenWith(jkPair)) {
+                    const commonToken = ikPair.getCommonToken(jkPair)!;
+                    if (commonToken.address.neq(tokenIn.address)) {
+                        result.push([
+                            this.getOrCreateDirectedPair(
+                                jkPair.address,
+                                commonToken.address.eq(jkPair.token0.address)
+                                    ? jkPair.token0
+                                    : jkPair.token1,
+                                tokenOut.address.eq(jkPair.token0.address)
+                                    ? jkPair.token0
+                                    : jkPair.token1,
+                                jkPair.token0,
+                                jkPair.fee,
+                                jkPair.vFee,
+                                jkPair.maxReserveRatio,
+                                jkPair.reserves
+                            ),
+                            this.getOrCreateDirectedPair(
+                                ikPair.address,
+                                tokenIn.address.eq(ikPair.token0.address)
+                                    ? ikPair.token0
+                                    : ikPair.token1,
+                                commonToken.address.eq(ikPair.token0.address)
+                                    ? ikPair.token0
+                                    : ikPair.token1,
+                                ikPair.token0,
+                                ikPair.fee,
+                                ikPair.vFee,
+                                ikPair.maxReserveRatio,
+                                ikPair.reserves
+                            ),
+                        ]);
                     }
-                });
+                }
             });
+        });
         return result;
     }
 
@@ -326,7 +408,11 @@ interface SwapCandidate {
 
     emulateTrade(amountIn: ethers.BigNumber): void;
 
-    routeNode(amountIn: ethers.BigNumber, amountOut: ethers.BigNumber, minAmountOut: ethers.BigNumber): RouteNode;
+    routeNode(
+        amountIn: ethers.BigNumber,
+        amountOut: ethers.BigNumber,
+        minAmountOut: ethers.BigNumber
+    ): RouteNode;
 }
 
 class DirectCandidate implements SwapCandidate {
@@ -344,7 +430,11 @@ class DirectCandidate implements SwapCandidate {
         this.pair.swapExactInput(amountIn);
     }
 
-    routeNode(amountIn: ethers.BigNumber, amountOut: ethers.BigNumber, minAmountOut: ethers.BigNumber): RouteNode {
+    routeNode(
+        amountIn: ethers.BigNumber,
+        amountOut: ethers.BigNumber,
+        minAmountOut: ethers.BigNumber
+    ): RouteNode {
         return {
             amountInBn: amountIn,
             amountOutBn: amountOut,
@@ -374,13 +464,21 @@ class TriangularCandidate implements SwapCandidate {
         this.secondaryPair.swapExactInput(this.pair.swapExactInput(amountIn));
     }
 
-    routeNode(amountIn: ethers.BigNumber, amountOut: ethers.BigNumber, minAmountOut: ethers.BigNumber): RouteNode {
+    routeNode(
+        amountIn: ethers.BigNumber,
+        amountOut: ethers.BigNumber,
+        minAmountOut: ethers.BigNumber
+    ): RouteNode {
         return {
             amountInBn: amountIn,
             amountOutBn: amountOut,
             minAmountOutBn: minAmountOut,
             type: SwapType.TRIANGULAR,
-            path: [this.pair.token0.address, this.pair.token1.address, this.secondaryPair.token1.address],
+            path: [
+                this.pair.token0.address,
+                this.pair.token1.address,
+                this.secondaryPair.token1.address,
+            ],
         };
     }
 }
@@ -411,13 +509,21 @@ class ReserveCandidate implements SwapCandidate {
         );
     }
 
-    routeNode(amountIn: ethers.BigNumber, amountOut: ethers.BigNumber, minAmountOut: ethers.BigNumber): RouteNode {
+    routeNode(
+        amountIn: ethers.BigNumber,
+        amountOut: ethers.BigNumber,
+        minAmountOut: ethers.BigNumber
+    ): RouteNode {
         return {
             amountInBn: amountIn,
             amountOutBn: amountOut,
             minAmountOutBn: minAmountOut,
             type: SwapType.VIRTUAL,
-            path: [this.referencePair.token0.address, this.pair.token0.address, this.pair.token1.address],
+            path: [
+                this.referencePair.token0.address,
+                this.pair.token0.address,
+                this.pair.token1.address,
+            ],
         };
     }
 
@@ -429,17 +535,26 @@ class ReserveCandidate implements SwapCandidate {
             : this.pair.token0.balanceBN;
         return new DirectedPair(
             new Address(''),
-            TokenWithBalance.fromBigNumber(this.referencePair.token0, this.referencePair.token0.balanceBN.mul(minCommonTokenBalance).div(this.referencePair.token1.balanceBN)),
-            TokenWithBalance.fromBigNumber(this.pair.token1, this.pair.token1.balanceBN.mul(minCommonTokenBalance).div(this.pair.token0.balanceBN)),
+            TokenWithBalance.fromBigNumber(
+                this.referencePair.token0,
+                this.referencePair.token0.balanceBN
+                    .mul(minCommonTokenBalance)
+                    .div(this.referencePair.token1.balanceBN)
+            ),
+            TokenWithBalance.fromBigNumber(
+                this.pair.token1,
+                this.pair.token1.balanceBN
+                    .mul(minCommonTokenBalance)
+                    .div(this.pair.token0.balanceBN)
+            ),
             this.pair.token1,
             [],
             0,
             this.pair.vFee,
-            this.pair.vFee,
+            this.pair.vFee
         );
     }
 }
-
 
 class DirectedPair {
     static PRICE_FEE_FACTOR = 1000;
@@ -454,7 +569,16 @@ class DirectedPair {
     readonly fee: number;
     readonly vFee: number;
 
-    constructor(address: Address, token0: TokenWithBalance, token1: TokenWithBalance, referenceToken: Token, reserves: Array<PairReserve>, maxReserveRatio: number, fee: number, vFee: number) {
+    constructor(
+        address: Address,
+        token0: TokenWithBalance,
+        token1: TokenWithBalance,
+        referenceToken: Token,
+        reserves: Array<PairReserve>,
+        maxReserveRatio: number,
+        fee: number,
+        vFee: number
+    ) {
         this.address = address;
         this.token0 = token0;
         this.token1 = token1;
@@ -469,7 +593,10 @@ class DirectedPair {
         reserveToken: TokenWithBalance,
         virtualPair: DirectedPair
     ): Array<any> {
-        const emptyReserve: PairReserve = PairReserve.empty(this.referenceToken, reserveToken);
+        const emptyReserve: PairReserve = PairReserve.empty(
+            this.referenceToken,
+            reserveToken
+        );
         const amountOut = virtualPair.getAmountOut(reserveToken.balanceBN);
         if (amountOut.gt(this.token1.balanceBN))
             throw new Error('AmountOut is greater than balance1');
@@ -482,9 +609,9 @@ class DirectedPair {
         );
 
         const currentRes =
-            this.reserves.find(
-                (res) =>
-                    res.reserveToken.address.eq(reserveToken.address)) ?? emptyReserve;
+            this.reserves.find((res) =>
+                res.reserveToken.address.eq(reserveToken.address)
+            ) ?? emptyReserve;
 
         const rbvSum = this.reserves
             .reduce(
@@ -496,16 +623,15 @@ class DirectedPair {
 
         const newReserveRatio = rbvSum
             .mul(DirectedPair.RESERVE_RATIO_FACTOR)
-            .div((this.token0.address.eq(this.referenceToken.address)
+            .div(
+                (this.token0.address.eq(this.referenceToken.address)
                     ? this.token0.balanceBN
-                    : updatedBalance1).mul(2)
+                    : updatedBalance1
+                ).mul(2)
             );
 
         return newReserveRatio.lte(this.maxReserveRatio)
-            ? [
-                  updatedReserve,
-                  updatedBalance1,
-              ]
+            ? [updatedReserve, updatedBalance1]
             : [];
     }
 
@@ -533,16 +659,12 @@ class DirectedPair {
         reserveToken: TokenWithBalance,
         virtualPool: DirectedPair
     ): void {
-        const ret = this.trySwapReserveToNative(
-            reserveToken,
-            virtualPool
-        );
+        const ret = this.trySwapReserveToNative(reserveToken, virtualPool);
         if (ret.length > 0) {
-            const idx = this.reserves.findIndex(
-                (reserve) =>
-                    reserve.reserveToken.address.eq(reserveToken.address)
+            const idx = this.reserves.findIndex((reserve) =>
+                reserve.reserveToken.address.eq(reserveToken.address)
             );
-            this.reserves.splice(idx, idx == -1 ? 0 : 1, ret[0])
+            this.reserves.splice(idx, idx == -1 ? 0 : 1, ret[0]);
             this.token1.balanceBN = ret[1];
         } else {
             throw new Error('Failed to swap reserve to native');
@@ -553,20 +675,25 @@ class DirectedPair {
         reserveToken: TokenWithBalance,
         virtualPair: DirectedPair
     ): PairReserve {
-        const emptyReserve: PairReserve = PairReserve.empty(this.referenceToken, reserveToken);
+        const emptyReserve: PairReserve = PairReserve.empty(
+            this.referenceToken,
+            reserveToken
+        );
         const currentReserves =
-            this.reserves.find(
-                (reserve) =>
-                    reserve.reserveToken.address.eq(reserveToken.address)
+            this.reserves.find((reserve) =>
+                reserve.reserveToken.address.eq(reserveToken.address)
             ) ?? emptyReserve;
-        currentReserves.reserveToken.balanceBN = reserveToken.balanceBN.add(currentReserves.reserveToken.balanceBN);
+        currentReserves.reserveToken.balanceBN = reserveToken.balanceBN.add(
+            currentReserves.reserveToken.balanceBN
+        );
         currentReserves.baseToken.balanceBN = virtualPair.token1.balanceBN
             .mul(currentReserves.reserveToken.balanceBN)
             .div(virtualPair.token0.balanceBN);
         if (virtualPair.token1.address.neq(this.referenceToken.address)) {
-            currentReserves.baseToken.balanceBN = currentReserves.baseToken.balanceBN
-                .mul(this.token0.balanceBN)
-                .div(this.token1.balanceBN);
+            currentReserves.baseToken.balanceBN =
+                currentReserves.baseToken.balanceBN
+                    .mul(this.token0.balanceBN)
+                    .div(this.token1.balanceBN);
         }
         return currentReserves;
     }

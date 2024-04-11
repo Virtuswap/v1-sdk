@@ -1,8 +1,8 @@
 query Metadata {
-  _meta {
-    block {
-      number
-      timestamp
+    _meta {
+        block {
+            number
+            timestamp
+        }
     }
-  }
 }

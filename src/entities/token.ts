@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-import { Address } from './utils'
+import { Address } from './utils';
 
 export class Token {
     readonly address: Address;
@@ -8,7 +8,7 @@ export class Token {
 
     constructor(address: string, decimals: number) {
         this.address = new Address(address);
-        this.decimals =  decimals
+        this.decimals = decimals;
     }
 }
 
@@ -19,13 +19,24 @@ export class TokenWithBalance extends Token {
         super(address, decimals);
         this._balance = balance;
     }
-    
-    static fromBigNumber(token: Token, balance: ethers.BigNumberish): TokenWithBalance {
-        return new TokenWithBalance(token.address.toString(), token.decimals, ethers.utils.formatUnits(balance, token.decimals));
+
+    static fromBigNumber(
+        token: Token,
+        balance: ethers.BigNumberish
+    ): TokenWithBalance {
+        return new TokenWithBalance(
+            token.address.toString(),
+            token.decimals,
+            ethers.utils.formatUnits(balance, token.decimals)
+        );
     }
-    
+
     static fromDecimal(token: Token, balance: string): TokenWithBalance {
-        return new TokenWithBalance(token.address.toString(), token.decimals, balance);
+        return new TokenWithBalance(
+            token.address.toString(),
+            token.decimals,
+            balance
+        );
     }
 
     get balanceBN(): ethers.BigNumber {
