@@ -28,8 +28,8 @@ export type Route = {
     tokenIn: TokenWithBalance;
     tokenOut: TokenWithBalance;
     minTokenOut: TokenWithBalance;
-    amountInUsd: string;
-    amountOutUsd: string;
+    // amountInUsd: string;
+    // amountOutUsd: string;
     chain: Chain;
     steps: Array<RouteNode>;
 };
@@ -130,8 +130,8 @@ export default class Router {
                 )
             ),
             // TODO: add tokens prices
-            amountInUsd: '0',
-            amountOutUsd: '0',
+            // amountInUsd: '0',
+            // amountOutUsd: '0',
             steps: candidates
                 .map((candidate, index) =>
                     candidate.routeNode(
