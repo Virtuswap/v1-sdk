@@ -17,7 +17,7 @@ export enum SwapType {
 }
 
 export type RouteNode = {
-    path: Array<Address>;
+    path: Array<Token>;
     type: SwapType;
     amountInBn: ethers.BigNumber;
     amountOutBn: ethers.BigNumber;
@@ -160,7 +160,7 @@ export default class Router {
                 case SwapType.TRIANGULAR:
                     functionName = 'swapExactTokensForTokens';
                     params = [
-                        step.path.map((value) => value.toString()),
+                        step.path.map((value) => value.address.toString()),
                         step.amountInBn,
                         step.minAmountOutBn,
                         signer.getAddress(),
@@ -170,7 +170,7 @@ export default class Router {
                 case SwapType.VIRTUAL:
                     functionName = 'swapReserveExactTokensForTokens';
                     params = [
-                        step.path.map((value) => value.toString()),
+                        step.path.map((value) => value.address.toString()),
                         step.amountInBn,
                         step.minAmountOutBn,
                         signer.getAddress(),
@@ -445,7 +445,7 @@ class DirectCandidate implements SwapCandidate {
             amountOutBn: amountOut,
             minAmountOutBn: minAmountOut,
             type: SwapType.DIRECT,
-            path: [this.pair.token0.address, this.pair.token1.address],
+            path: [this.pair.token0, this.pair.token1],
         };
     }
 }
@@ -480,9 +480,9 @@ class TriangularCandidate implements SwapCandidate {
             minAmountOutBn: minAmountOut,
             type: SwapType.TRIANGULAR,
             path: [
-                this.pair.token0.address,
-                this.pair.token1.address,
-                this.secondaryPair.token1.address,
+                this.pair.token0,
+                this.pair.token1,
+                this.secondaryPair.token1,
             ],
         };
     }
@@ -525,9 +525,9 @@ class ReserveCandidate implements SwapCandidate {
             minAmountOutBn: minAmountOut,
             type: SwapType.VIRTUAL,
             path: [
-                this.referencePair.token0.address,
-                this.pair.token0.address,
-                this.pair.token1.address,
+                this.referencePair.token0,
+                this.pair.token0,
+                this.pair.token1,
             ],
         };
     }
