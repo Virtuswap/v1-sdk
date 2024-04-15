@@ -1,10 +1,16 @@
 {
-    "devDependencies": {
-        "@graphprotocol/client-cli": "^3.0.0",
-        "prettier": "^3.2.5"
-    },
-    "dependencies": {
-        "@types/lodash.clonedeep": "^4.5.9",
-        "ethers": "^5.7.2"
-    }
+  "devDependencies": {
+    "@graphprotocol/client-cli": "^3.0.0",
+    "@types/jest": "^29.5.12",
+    "prettier": "^3.2.5",
+    "ts-jest": "^29.1.2"
+  },
+  "dependencies": {
+    "@types/lodash.clonedeep": "^4.5.9",
+    "ethers": "^5.7.2"
+  },
+  "scripts": {
+    "test": "jest",
+    "coverage": "jest --coverage"
+  }
 }
