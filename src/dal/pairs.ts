@@ -20,8 +20,8 @@ export async function getAllPairs(chain: Chain): Promise<Array<Pair>> {
             parseInt(pair.vFee),
             parseInt(pair.maxReserveRatio),
             parseInt(pair.reserveRatio),
-            pair.whitelist.map((token: any) => new Address(token.id)),
-            pair.reserves.map(
+            pair.whitelist.map((token: any) => new Address(token.token.id)),
+            pair.pairReserves.map(
                 (reserve: any) =>
                     new PairReserve(
                         TokenWithBalance.fromDecimal(
