@@ -227,7 +227,7 @@ export default class Router {
         maxReserveRatio: number,
         reserves: Array<PairReserve>
     ): DirectedPair {
-        if (!this.directedPairsCache.has(address.address)) {
+        if (!this.directedPairsCache.has(address.toString())) {
             const newDirectedPair = new DirectedPair(
                 address,
                 token0,
@@ -238,9 +238,9 @@ export default class Router {
                 fee,
                 vFee
             );
-            this.directedPairsCache.set(address.address, newDirectedPair);
+            this.directedPairsCache.set(address.toString(), newDirectedPair);
         }
-        return this.directedPairsCache.get(address.address)!;
+        return this.directedPairsCache.get(address.toString())!;
     }
 
     private getDirectSwapPairs(

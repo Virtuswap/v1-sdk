@@ -1,5 +1,5 @@
 export class Address {
-    readonly address: string;
+    private readonly address: string;
 
     constructor(address: string) {
         this.address = address.toLowerCase();
