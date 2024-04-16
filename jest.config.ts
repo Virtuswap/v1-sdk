@@ -4,7 +4,7 @@ const jestConfig: JestConfigWithTsJest = {
     preset: 'ts-jest',
     verbose: true,
     testTimeout: 10000,
-    coveragePathIgnorePatterns: ['./src/dal/graphclients'],
+    coveragePathIgnorePatterns: ['./src/dal/graphclients', './tests/mocks.ts'],
 };
 
 export default jestConfig;
