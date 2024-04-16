@@ -10,7 +10,6 @@ import { abi as vRouterAbi } from '../artifacts/vRouter.json';
 import cloneDeep from 'lodash/cloneDeep';
 
 export enum SwapType {
-    UNDEFINED,
     DIRECT,
     TRIANGULAR,
     VIRTUAL,
@@ -177,7 +176,6 @@ export default class Router {
                         futureTs,
                     ];
                     break;
-                default:
             }
             return routerContract.interface.encodeFunctionData(
                 functionName,
