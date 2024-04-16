@@ -62,12 +62,7 @@ export class Pair {
     }
 
     hasCommonTokenWith(pair: Pair): boolean {
-        return (
-            this.token0.address.eq(pair.token0.address) ||
-            this.token1.address.eq(pair.token0.address) ||
-            this.token0.address.eq(pair.token1.address) ||
-            this.token1.address.eq(pair.token1.address)
-        );
+        return this.getCommonToken(pair) != null;
     }
 
     getCommonToken(pair: Pair): Token | null {
