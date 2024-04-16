@@ -7,7 +7,7 @@ import { Chain, chainInfo } from '../entities/chain';
 import { Address } from '../entities/utils';
 import { getAllPairs } from '../dal/pairs';
 import { abi as vRouterAbi } from '../artifacts/vRouter.json';
-import cloneDeep from 'lodash.clonedeep';
+import cloneDeep from 'lodash/cloneDeep';
 
 export enum SwapType {
     UNDEFINED,
