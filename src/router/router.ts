@@ -149,7 +149,9 @@ export default class Router {
             vRouterAbi,
             signer
         );
+        const routerInterface = new ethers.utils.Interface(vRouterAbi);
         const futureTs = (await getBlockTimestamp(route.chain)) + 100000;
+        const signerAddress = await signer.getAddress();
         const multicallData = route.steps.map((step) => {
             let functionName = 'undefined';
             let params: any[] = [];
@@ -162,25 +164,24 @@ export default class Router {
                         step.path.map((value) => value.address.toString()),
                         step.amountInBn,
                         step.minAmountOutBn,
-                        signer.getAddress(),
+                        signerAddress,
                         futureTs,
                     ];
                     break;
                 case SwapType.VIRTUAL:
                     functionName = 'swapReserveExactTokensForTokens';
                     params = [
-                        step.path.map((value) => value.address.toString()),
+                        step.path[2].address.toString(),
+                        step.path[1].address.toString(),
+                        (step as ReserveRouteNode).ikPair.toString(),
                         step.amountInBn,
                         step.minAmountOutBn,
-                        signer.getAddress(),
+                        signerAddress,
                         futureTs,
                     ];
                     break;
             }
-            return routerContract.interface.encodeFunctionData(
-                functionName,
-                params
-            );
+            return routerInterface.encodeFunctionData(functionName, params);
         });
         await routerContract.multicall(multicallData);
     }
