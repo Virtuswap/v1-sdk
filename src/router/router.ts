@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import cloneDeep from 'lodash/cloneDeep';
 
 import { Token, TokenWithBalance } from '../entities/token';
 import { Pair, PairReserve } from '../entities/pair';
@@ -7,7 +8,7 @@ import { Chain, chainInfo } from '../entities/chain';
 import { Address } from '../entities/utils';
 import { getAllPairs } from '../dal/pairs';
 import { abi as vRouterAbi } from '../artifacts/vRouter.json';
-import cloneDeep from 'lodash/cloneDeep';
+import { getTokenPriceUsd } from '../utils/pricing';
 
 export enum SwapType {
     DIRECT,
@@ -33,8 +34,8 @@ export type Route = {
     tokenIn: TokenWithBalance;
     tokenOut: TokenWithBalance;
     minTokenOut: TokenWithBalance;
-    // amountInUsd: string;
-    // amountOutUsd: string;
+    amountInUsd: number;
+    amountOutUsd: number;
     chain: Chain;
     steps: Array<RouteNode>;
 };
@@ -117,16 +118,17 @@ export default class Router {
         const minAmountsOut = amountsOut.map((amount) =>
             amount.sub(amount.div(this.swapOptions.slippage))
         );
+        const tokenOutWithBalance = TokenWithBalance.fromBigNumber(
+            tokenOut,
+            amountsOut.reduce(
+                (sum, prev) => sum.add(prev),
+                ethers.BigNumber.from('0')
+            )
+        );
         return {
             chain,
             tokenIn,
-            tokenOut: TokenWithBalance.fromBigNumber(
-                tokenOut,
-                amountsOut.reduce(
-                    (sum, prev) => sum.add(prev),
-                    ethers.BigNumber.from('0')
-                )
-            ),
+            tokenOut: tokenOutWithBalance,
             minTokenOut: TokenWithBalance.fromBigNumber(
                 tokenOut,
                 minAmountsOut.reduce(
@@ -134,9 +136,12 @@ export default class Router {
                     ethers.BigNumber.from('0')
                 )
             ),
-            // TODO: add tokens prices
-            // amountInUsd: '0',
-            // amountOutUsd: '0',
+            amountInUsd:
+                parseFloat(tokenIn.balance) *
+                (await getTokenPriceUsd(chain, tokenIn.address.toString())),
+            amountOutUsd:
+                parseFloat(tokenOutWithBalance.balance) *
+                (await getTokenPriceUsd(chain, tokenOut.address.toString())),
             steps: candidates
                 .map((candidate, index) =>
                     candidate.routeNode(

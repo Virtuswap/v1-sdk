@@ -11,6 +11,7 @@ export enum Chain {
 export interface ChainInfoItem {
     routerAddress: Address;
     useBlockTimestamp: boolean;
+    coingeckoId?: string;
 }
 
 export interface ChainInfo {
@@ -25,6 +26,7 @@ export const chainInfo: ChainInfo = {
             '0x3E3d15ea98429E546f30215AEfBB69A4244A8Ea9'
         ),
         useBlockTimestamp: false,
+        coingeckoId: 'polygon-pos',
     },
     // ARBITRUM
     42161: {
@@ -32,6 +34,7 @@ export const chainInfo: ChainInfo = {
             '0xB455da5a32E7E374dB6d1eDfdb86C167DD983f40'
         ),
         useBlockTimestamp: true,
+        coingeckoId: 'arbitrum-one',
     },
     /*** TESTNET ***/
     // POLYGON
