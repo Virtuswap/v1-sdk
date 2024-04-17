@@ -15,13 +15,19 @@ export enum SwapType {
     VIRTUAL,
 }
 
-export type RouteNode = {
+export type BaseRouteNode = {
     path: Array<Token>;
     type: SwapType;
     amountInBn: ethers.BigNumber;
     amountOutBn: ethers.BigNumber;
     minAmountOutBn: ethers.BigNumber;
 };
+
+export type ReserveRouteNode = BaseRouteNode & {
+    ikPair: Address;
+};
+
+export type RouteNode = BaseRouteNode | ReserveRouteNode;
 
 export type Route = {
     tokenIn: TokenWithBalance;
@@ -438,7 +444,7 @@ class DirectCandidate implements SwapCandidate {
         amountIn: ethers.BigNumber,
         amountOut: ethers.BigNumber,
         minAmountOut: ethers.BigNumber
-    ): RouteNode {
+    ): BaseRouteNode {
         return {
             amountInBn: amountIn,
             amountOutBn: amountOut,
@@ -472,7 +478,7 @@ class TriangularCandidate implements SwapCandidate {
         amountIn: ethers.BigNumber,
         amountOut: ethers.BigNumber,
         minAmountOut: ethers.BigNumber
-    ): RouteNode {
+    ): BaseRouteNode {
         return {
             amountInBn: amountIn,
             amountOutBn: amountOut,
@@ -517,12 +523,13 @@ class ReserveCandidate implements SwapCandidate {
         amountIn: ethers.BigNumber,
         amountOut: ethers.BigNumber,
         minAmountOut: ethers.BigNumber
-    ): RouteNode {
+    ): ReserveRouteNode {
         return {
             amountInBn: amountIn,
             amountOutBn: amountOut,
             minAmountOutBn: minAmountOut,
             type: SwapType.VIRTUAL,
+            ikPair: this.referencePair.address,
             path: [
                 this.referencePair.token0,
                 this.pair.token0,
