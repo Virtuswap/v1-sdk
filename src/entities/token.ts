@@ -48,7 +48,9 @@ export class TokenWithBalance extends Token {
     }
 
     set balanceBN(balanceBN: ethers.BigNumber) {
-        this._balance = ethers.utils.formatUnits(balanceBN, this.decimals);
+        this._balance = ethers.utils
+            .formatUnits(balanceBN, this.decimals)
+            .toString();
     }
 
     set balance(balance: string) {
