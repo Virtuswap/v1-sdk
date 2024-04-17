@@ -6,7 +6,7 @@ import { Chain } from '../src/entities/chain';
 describe('DAL: queries', () => {
     test('queryAllPairs works with polygon-testnet', async () => {
         const pairs = await queryAllPairs(Chain.POLYGON_TESTNET);
-        expect(pairs.data.pairs.length).toBeGreaterThan(0);
+        expect(pairs.length).toBeGreaterThan(0);
     });
     test('queryMeta works with polygon-testnet', async () => {
         const meta = await queryMeta(Chain.POLYGON_TESTNET);
@@ -15,7 +15,7 @@ describe('DAL: queries', () => {
     });
     test('queryAllPairs works with arbitrum-testnet', async () => {
         const pairs = await queryAllPairs(Chain.ARBITRUM_TESTNET);
-        expect(pairs.data.pairs.length).toBeGreaterThan(0);
+        expect(pairs.length).toBeGreaterThan(0);
     });
     test('queryMeta works with arbitrum-testnet', async () => {
         const meta = await queryMeta(Chain.ARBITRUM_TESTNET);
