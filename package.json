@@ -12,7 +12,8 @@
     },
     "scripts": {
         "test": "jest",
-        "coverage": "jest --coverage"
+        "coverage": "jest --coverage",
+        "prepublishOnly": "tsc"
     },
     "name": "@virtuswap/v1-sdk",
     "version": "0.1.0",
