@@ -13,5 +13,27 @@
     "scripts": {
         "test": "jest",
         "coverage": "jest --coverage"
+    },
+    "name": "@virtuswap/v1-sdk",
+    "version": "0.1.0",
+    "description": "VirtuSwap SDK",
+    "main": "dist/index.js",
+    "typings": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "directories": {
+        "test": "tests"
+    },
+    "keywords": [
+        "virtuswap"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Virtuswap/v1-sdk.git"
+    },
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Virtuswap/v1-sdk/issues"
     }
 }
