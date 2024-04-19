@@ -44,7 +44,7 @@ export type SwapOptions = {
     slippage: number;
 };
 
-export default class Router {
+export class Router {
     swapOptions: SwapOptions;
 
     constructor(slippage = 1000) {
