@@ -291,11 +291,13 @@ export class Router {
         );
         candidatesIn.forEach((pair0) => {
             candidatesOut.forEach((pair1) => {
+                const commonToken = pair0.getCommonToken(pair1);
                 if (
+                    commonToken &&
                     pair0.address.neq(pair1.address) &&
-                    pair0.hasCommonTokenWith(pair1)
+                    commonToken.address.neq(tokenIn.address) &&
+                    commonToken.address.neq(tokenOut.address)
                 ) {
-                    const commonToken = pair0.getCommonToken(pair1)!;
                     const triangularSwapPair0 = this.getOrCreateDirectedPair(
                         pair0.address,
                         tokenIn.address.eq(pair0.token0.address)
