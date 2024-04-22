@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { TransactionResponse } from '@ethersproject/abstract-provider';
 import cloneDeep from 'lodash/cloneDeep';
 
 import { Token, TokenWithBalance } from '../entities/token';
@@ -7,7 +8,7 @@ import { getBlockTimestamp, getBlockNumber } from '../dal/meta';
 import { Chain, chainInfo } from '../entities/chain';
 import { Address } from '../entities/utils';
 import { getAllPairs } from '../dal/pairs';
-import { abi as vRouterAbi } from '../artifacts/vRouter.json';
+import vRouterAbi from '../artifacts/vRouterAbi.json';
 import { getTokenPriceUsd } from '../utils/pricing';
 
 export enum SwapType {
@@ -26,6 +27,7 @@ export type BaseRouteNode = {
 
 export type ReserveRouteNode = BaseRouteNode & {
     ikPair: Address;
+    jkPair: Address;
 };
 
 export type RouteNode = BaseRouteNode | ReserveRouteNode;
@@ -154,7 +156,7 @@ export class Router {
         };
     }
 
-    async executeRoute(route: Route, signer: ethers.Signer): Promise<void> {
+    async executeRoute(route: Route, signer: ethers.Signer): Promise<TransactionResponse> {
         const routerContract = new ethers.Contract(
             chainInfo[route.chain].routerAddress.toString(),
             vRouterAbi,
@@ -194,7 +196,7 @@ export class Router {
             }
             return routerInterface.encodeFunctionData(functionName, params);
         });
-        await routerContract.multicall(multicallData);
+        return await routerContract.multicall(multicallData);
     }
 
     private pairsCache: Array<Pair>;
@@ -537,6 +539,7 @@ class ReserveCandidate implements SwapCandidate {
             minAmountOutBn: minAmountOut,
             type: SwapType.VIRTUAL,
             ikPair: this.referencePair.address,
+            jkPair: this.pair.address,
             path: [
                 this.referencePair.token0,
                 this.pair.token0,
