@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { TransactionResponse } from '@ethersproject/abstract-provider';
 import cloneDeep from 'lodash/cloneDeep';
 
 import { Token, TokenWithBalance } from '../entities/token';
@@ -155,7 +156,7 @@ export class Router {
         };
     }
 
-    async executeRoute(route: Route, signer: ethers.Signer): Promise<void> {
+    async executeRoute(route: Route, signer: ethers.Signer): Promise<TransactionResponse> {
         const routerContract = new ethers.Contract(
             chainInfo[route.chain].routerAddress.toString(),
             vRouterAbi,
@@ -195,7 +196,7 @@ export class Router {
             }
             return routerInterface.encodeFunctionData(functionName, params);
         });
-        await routerContract.multicall(multicallData);
+        return await routerContract.multicall(multicallData);
     }
 
     private pairsCache: Array<Pair>;
