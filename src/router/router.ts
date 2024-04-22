@@ -7,7 +7,7 @@ import { getBlockTimestamp, getBlockNumber } from '../dal/meta';
 import { Chain, chainInfo } from '../entities/chain';
 import { Address } from '../entities/utils';
 import { getAllPairs } from '../dal/pairs';
-import { abi as vRouterAbi } from '../artifacts/vRouter.json';
+import vRouterAbi from '../artifacts/vRouterAbi.json';
 import { getTokenPriceUsd } from '../utils/pricing';
 
 export enum SwapType {
@@ -26,6 +26,7 @@ export type BaseRouteNode = {
 
 export type ReserveRouteNode = BaseRouteNode & {
     ikPair: Address;
+    jkPair: Address;
 };
 
 export type RouteNode = BaseRouteNode | ReserveRouteNode;
@@ -537,6 +538,7 @@ class ReserveCandidate implements SwapCandidate {
             minAmountOutBn: minAmountOut,
             type: SwapType.VIRTUAL,
             ikPair: this.referencePair.address,
+            jkPair: this.pair.address,
             path: [
                 this.referencePair.token0,
                 this.pair.token0,

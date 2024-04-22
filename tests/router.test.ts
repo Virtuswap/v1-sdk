@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import Router from '../src/router/router';
+import { Router } from '../src/router/router';
 import { Token, TokenWithBalance } from '../src/entities/token';
 import { Chain } from '../src/entities/chain';
 import { mockAllPairsResponse, mockMetadataResponse } from './mocks';
