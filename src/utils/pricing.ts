@@ -28,3 +28,27 @@ export async function getTokenPriceUsd(
         return 0;
     }
 }
+
+export async function getMultipleTokensPriceUsd(
+    chain: Chain,
+    tokensAddresses: Array<string>
+): Promise<Array<number>> {
+    if (chainInfo[chain].coingeckoId) {
+        const params = new URLSearchParams({
+            tokensAddresses: tokensAddresses.toString(),
+            chainId: chain.toString(),
+        });
+
+        try {
+            let response = await axios.get(
+                `https://api.virtuswap.io/tokensPricesUsd?${params}`
+            );
+            return response.status === 200 ? response.data : [];
+        } catch (e) {
+            console.log(`Error fetching usd price: ${e}`);
+            return [];
+        }
+    } else {
+        return [];
+    }
+}

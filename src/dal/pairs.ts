@@ -8,6 +8,8 @@ import {
     RawPairReserve,
     RawPairWhitelist,
 } from './utils/execute';
+import { getMultipleTokensPriceUsd } from '../utils/pricing';
+import { getAllTokens } from './tokens';
 
 export async function getAllPairs(chain: Chain): Promise<Array<Pair>> {
     const pairs = await queryAllPairs(chain);
@@ -40,4 +42,54 @@ export async function getAllPairs(chain: Chain): Promise<Array<Pair>> {
             })
         );
     });
+}
+
+export async function getTopPairsForToken(
+    chain: Chain,
+    tokenAddress: Address,
+    count: number
+): Promise<Array<Pair>> {
+    const pairs = await getAllPairs(chain);
+    const tokensAddresses = (await getAllTokens(chain)).map((t) =>
+        t.address.toString()
+    );
+    const tokensPriceUsd = await getMultipleTokensPriceUsd(
+        chain,
+        tokensAddresses
+    );
+
+    if (tokensAddresses.length != tokensPriceUsd.length) return [];
+
+    const tokensWithUsdPrices = tokensAddresses.map((t, i) => {
+        return { token: t, priceUsd: tokensPriceUsd[i] };
+    });
+
+    return pairs
+        .filter(
+            (p) =>
+                p.token0.address.eq(tokenAddress) ||
+                p.token1.address.eq(tokenAddress)
+        )
+        .sort((a, b) => {
+            const a0Price = tokensWithUsdPrices.find(
+                (t) => t.token == a.token0.address.toString()
+            )!.priceUsd;
+            const a1Price = tokensWithUsdPrices.find(
+                (t) => t.token == a.token1.address.toString()
+            )!.priceUsd;
+            const b0Price = tokensWithUsdPrices.find(
+                (t) => t.token == b.token0.address.toString()
+            )!.priceUsd;
+            const b1Price = tokensWithUsdPrices.find(
+                (t) => t.token == b.token1.address.toString()
+            )!.priceUsd;
+            const tvlA =
+                parseFloat(a.token0.balance) * a0Price +
+                parseFloat(a.token1.balance) * a1Price;
+            const tvlB =
+                parseFloat(b.token0.balance) * b0Price +
+                parseFloat(b.token1.balance) * b1Price;
+            return tvlA > tvlB ? -1 : tvlA < tvlB ? 1 : 0;
+        })
+        .slice(0, count);
 }

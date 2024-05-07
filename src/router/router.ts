@@ -9,7 +9,7 @@ import { Chain, chainInfo } from '../entities/chain';
 import { Address } from '../entities/utils';
 import { getAllPairs } from '../dal/pairs';
 import vRouterAbi from '../artifacts/vRouterAbi.json';
-import { getTokenPriceUsd } from '../utils/pricing';
+import { getMultipleTokensPriceUsd } from '../utils/pricing';
 
 export enum SwapType {
     DIRECT,
@@ -127,6 +127,11 @@ export class Router {
                 ethers.BigNumber.from('0')
             )
         );
+        const [tokenInPriceUsd, tokenOutPriceUsd] =
+            await getMultipleTokensPriceUsd(chain, [
+                tokenIn.address.toString(),
+                tokenOut.address.toString(),
+            ]);
         return {
             chain,
             tokenIn,
@@ -138,12 +143,9 @@ export class Router {
                     ethers.BigNumber.from('0')
                 )
             ),
-            amountInUsd:
-                parseFloat(tokenIn.balance) *
-                (await getTokenPriceUsd(chain, tokenIn.address.toString())),
+            amountInUsd: parseFloat(tokenIn.balance) * tokenInPriceUsd,
             amountOutUsd:
-                parseFloat(tokenOutWithBalance.balance) *
-                (await getTokenPriceUsd(chain, tokenOut.address.toString())),
+                parseFloat(tokenOutWithBalance.balance) * tokenOutPriceUsd,
             steps: candidates
                 .map((candidate, index) =>
                     candidate.routeNode(
@@ -156,7 +158,10 @@ export class Router {
         };
     }
 
-    async executeRoute(route: Route, signer: ethers.Signer): Promise<TransactionResponse> {
+    async executeRoute(
+        route: Route,
+        signer: ethers.Signer
+    ): Promise<TransactionResponse> {
         const routerContract = new ethers.Contract(
             chainInfo[route.chain].routerAddress.toString(),
             vRouterAbi,

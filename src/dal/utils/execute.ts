@@ -37,3 +37,15 @@ export async function queryMeta(chain: Chain): Promise<RawMeta | null> {
         return null;
     }
 }
+
+export async function queryAllTokens(chain: Chain): Promise<Array<RawToken>> {
+    try {
+        let response = await axios.get(
+            `https://api.virtuswap.io/graph/tokens?chainId=${chain}`
+        );
+        return response.status === 200 ? response.data : [];
+    } catch (e) {
+        console.log(`Error fetching tokens: ${e}`);
+        return [];
+    }
+}
