@@ -16,8 +16,9 @@
         "prepublishOnly": "tsc"
     },
     "name": "@virtuswap/v1-sdk",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "VirtuSwap SDK",
+    "type": "module",
     "main": "dist/index.js",
     "typings": "dist/index.d.ts",
     "files": [
