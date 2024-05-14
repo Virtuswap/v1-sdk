@@ -3,7 +3,8 @@
         "@graphprotocol/client-cli": "^3.0.0",
         "@types/jest": "^29.5.12",
         "prettier": "^3.2.5",
-        "ts-jest": "^29.1.2"
+        "ts-jest": "^29.1.2",
+        "tsup": "^8.0.2"
     },
     "dependencies": {
         "@types/lodash.clonedeep": "^4.5.9",
@@ -13,14 +14,23 @@
     "scripts": {
         "test": "jest",
         "coverage": "jest --coverage",
-        "prepublishOnly": "tsc"
+        "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+        "watch": "npm run build -- --watch src",
+        "prepublishOnly": "npm run build"
     },
     "name": "@virtuswap/v1-sdk",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "description": "VirtuSwap SDK",
-    "type": "module",
-    "main": "dist/index.js",
-    "typings": "dist/index.d.ts",
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "require": "./dist/index.js",
+            "import": "./dist/index.mjs",
+            "types": "./dist/index.d.ts"
+        }
+    },
     "files": [
         "dist"
     ],
