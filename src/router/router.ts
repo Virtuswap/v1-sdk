@@ -2,6 +2,16 @@ import { ethers } from 'ethers';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import cloneDeep from 'lodash/cloneDeep';
 
+import { DirectedPair } from './internal/directedPair';
+import {
+    SwapCandidate,
+    DirectCandidate,
+    TriangularCandidate,
+    ReserveCandidate,
+} from './internal/swapCandidates';
+
+import { SwapType, ReserveRouteNode, Route, SwapOptions } from './entities';
+
 import { Token, TokenWithBalance } from '../entities/token';
 import { Pair, PairReserve } from '../entities/pair';
 import { getBlockTimestamp, getBlockNumber } from '../dal/meta';
@@ -11,121 +21,119 @@ import { getAllPairs } from '../dal/pairs';
 import vRouterAbi from '../artifacts/vRouterAbi.json';
 import { getMultipleTokensPriceUsd } from '../utils/pricing';
 
-export enum SwapType {
-    DIRECT,
-    TRIANGULAR,
-    VIRTUAL,
-}
-
-export type BaseRouteNode = {
-    path: Array<Token>;
-    type: SwapType;
-    amountInBn: ethers.BigNumber;
-    amountOutBn: ethers.BigNumber;
-    minAmountOutBn: ethers.BigNumber;
-};
-
-export type ReserveRouteNode = BaseRouteNode & {
-    ikPair: Address;
-    jkPair: Address;
-};
-
-export type RouteNode = BaseRouteNode | ReserveRouteNode;
-
-export type Route = {
-    tokenIn: TokenWithBalance;
-    tokenOut: TokenWithBalance;
-    minTokenOut: TokenWithBalance;
-    amountInUsd: number;
-    amountOutUsd: number;
-    chain: Chain;
-    steps: Array<RouteNode>;
-};
-
-export type SwapOptions = {
-    slippage: number;
-};
-
 export class Router {
     swapOptions: SwapOptions;
 
-    constructor(slippage = 1000) {
+    constructor(swapOptions?: SwapOptions) {
         this.swapOptions = {
-            slippage,
+            isExactInput: swapOptions?.isExactInput ?? true,
+            slippage: swapOptions?.slippage ?? 1000,
         };
         this.pairsCache = new Array();
         this.directedPairsCache = new Map();
     }
 
     async getRoute(
-        tokenIn: TokenWithBalance,
+        tokenIn: Token,
         tokenOut: Token,
+        amount: ethers.BigNumberish,
         chain: Chain,
         swapOptions?: SwapOptions
     ): Promise<Route> {
-        if (swapOptions) this.swapOptions = swapOptions;
+        this.swapOptions = {
+            isExactInput: swapOptions?.isExactInput ?? true,
+            slippage: swapOptions?.slippage ?? 1000,
+        };
         this.pairsCache = await getAllPairs(chain);
         this.directedPairsCache.clear();
+        const amountBN = ethers.BigNumber.from(amount);
 
         const candidates = await this.getSwapCandidates(
             tokenIn,
             tokenOut,
             chain
         );
-        let maxRoute = new Array<ethers.BigNumber>(candidates.length).fill(
+        let optimalRoute = new Array<ethers.BigNumber>(candidates.length).fill(
             ethers.BigNumber.from(0)
         );
-        maxRoute[maxRoute.length - 1] = tokenIn.balanceBN;
-        let maxAmountOut = this.calculateRouteAmountsOut(
+        optimalRoute[optimalRoute.length - 1] = amountBN;
+        let optimalAmount = this.calculateRouteAmounts(
             candidates,
-            maxRoute
+            optimalRoute,
+            this.swapOptions.isExactInput!
         ).reduce((current, sum) => sum.add(current), ethers.BigNumber.from(0));
+        if (!this.swapOptions.isExactInput!)
+            optimalAmount = this.negateBigNumber(optimalAmount);
 
-        let step = tokenIn.balanceBN.div(2);
+        let step = amountBN;
         while (!step.isZero()) {
-            let nextMaxAmountOut = ethers.BigNumber.from(0);
+            let nextOptimalAmount = ethers.BigNumber.from(
+                '-99999999999999999999999999999999'
+            );
             let [from, to] = [0, 0];
             for (let i = 0; i < candidates.length; ++i) {
-                if (maxRoute[i].lt(step)) continue;
+                if (optimalRoute[i].lt(step)) continue;
                 for (let j = 0; j < candidates.length; ++j) {
                     if (i != j) {
-                        maxRoute[i] = maxRoute[i].sub(step);
-                        maxRoute[j] = maxRoute[j].add(step);
-                        let nextAmountOut = this.calculateRouteAmountsOut(
+                        optimalRoute[i] = optimalRoute[i].sub(step);
+                        optimalRoute[j] = optimalRoute[j].add(step);
+                        let nextAmount = this.calculateRouteAmounts(
                             candidates,
-                            maxRoute
+                            optimalRoute,
+                            this.swapOptions.isExactInput!
                         ).reduce(
                             (current, sum) => sum.add(current),
                             ethers.BigNumber.from(0)
                         );
-                        if (nextAmountOut.gt(nextMaxAmountOut)) {
-                            nextMaxAmountOut = nextAmountOut;
+                        if (!this.swapOptions.isExactInput!)
+                            nextAmount = this.negateBigNumber(nextAmount);
+                        if (nextAmount.gt(nextOptimalAmount)) {
+                            nextOptimalAmount = nextAmount;
                             from = i;
                             to = j;
                         }
-                        maxRoute[i] = maxRoute[i].add(step);
-                        maxRoute[j] = maxRoute[j].sub(step);
+                        optimalRoute[i] = optimalRoute[i].add(step);
+                        optimalRoute[j] = optimalRoute[j].sub(step);
                     }
                 }
             }
-            if (nextMaxAmountOut.gt(maxAmountOut)) {
-                maxAmountOut = nextMaxAmountOut;
-                maxRoute[from] = maxRoute[from].sub(step);
-                maxRoute[to] = maxRoute[to].add(step);
+            if (nextOptimalAmount.gt(optimalAmount)) {
+                optimalAmount = nextOptimalAmount;
+                optimalRoute[from] = optimalRoute[from].sub(step);
+                optimalRoute[to] = optimalRoute[to].add(step);
             } else {
                 step = step.div(2);
             }
         }
-        const amountsOut = this.calculateRouteAmountsOut(candidates, maxRoute);
-        const minAmountsOut = amountsOut.map((amount) =>
-            amount.sub(amount.div(this.swapOptions.slippage))
+        let amounts = this.calculateRouteAmounts(
+            candidates,
+            optimalRoute,
+            this.swapOptions.isExactInput!
+        );
+        const slippageThresholdAmounts = amounts.map((amount) =>
+            amount.sub(amount.div(this.swapOptions.slippage!))
+        );
+        const slippageThresholdAmountsSum = slippageThresholdAmounts.reduce(
+            (sum, prev) => sum.add(prev),
+            ethers.BigNumber.from('0')
         );
         const tokenOutWithBalance = TokenWithBalance.fromBigNumber(
             tokenOut,
-            amountsOut.reduce(
-                (sum, prev) => sum.add(prev),
-                ethers.BigNumber.from('0')
-            )
+            this.swapOptions.isExactInput
+                ? amounts.reduce(
+                      (sum, prev) => sum.add(prev),
+                      ethers.BigNumber.from('0')
+                  )
+                : amountBN
+        );
+        const tokenInWithBalance = TokenWithBalance.fromBigNumber(
+            tokenIn,
+            this.swapOptions.isExactInput
+                ? amountBN
+                : amounts.reduce(
+                      (sum, prev) => sum.add(prev),
+                      ethers.BigNumber.from('0')
+                  )
         );
         const [tokenInPriceUsd, tokenOutPriceUsd] =
             await getMultipleTokensPriceUsd(chain, [
@@ -133,25 +141,28 @@ export class Router {
                 tokenOut.address.toString(),
             ]);
         return {
+            isExactInput: this.swapOptions.isExactInput!,
             chain,
-            tokenIn,
+            tokenIn: tokenInWithBalance,
             tokenOut: tokenOutWithBalance,
-            minTokenOut: TokenWithBalance.fromBigNumber(
-                tokenOut,
-                minAmountsOut.reduce(
-                    (sum, prev) => sum.add(prev),
-                    ethers.BigNumber.from('0')
-                )
+            slippageThresholdAmount: TokenWithBalance.fromBigNumber(
+                this.swapOptions.isExactInput ? tokenOut : tokenIn,
+                slippageThresholdAmountsSum
             ),
-            amountInUsd: parseFloat(tokenIn.balance) * tokenInPriceUsd,
+            amountInUsd:
+                parseFloat(tokenInWithBalance.balance) * tokenInPriceUsd,
             amountOutUsd:
                 parseFloat(tokenOutWithBalance.balance) * tokenOutPriceUsd,
             steps: candidates
                 .map((candidate, index) =>
                     candidate.routeNode(
-                        maxRoute[index],
-                        amountsOut[index],
-                        minAmountsOut[index]
+                        this.swapOptions.isExactInput!
+                            ? optimalRoute[index]
+                            : amounts[index],
+                        this.swapOptions.isExactInput!
+                            ? amounts[index]
+                            : optimalRoute[index],
+                        slippageThresholdAmounts[index]
                     )
                 )
                 .filter((routerNode) => !routerNode.amountInBn.isZero()),
@@ -172,23 +183,27 @@ export class Router {
             switch (step.type) {
                 case SwapType.DIRECT:
                 case SwapType.TRIANGULAR:
-                    functionName = 'swapExactTokensForTokens';
+                    functionName = route.isExactInput
+                        ? 'swapExactTokensForTokens'
+                        : 'swapTokensForExactTokens';
                     params = [
                         step.path.map((value) => value.address.toString()),
-                        step.amountInBn,
-                        step.minAmountOutBn,
+                        route.isExactInput ? step.amountInBn : step.amountOutBn,
+                        step.slippageThresholdAmountBn,
                         signerAddress,
                         futureTs,
                     ];
                     break;
                 case SwapType.VIRTUAL:
-                    functionName = 'swapReserveExactTokensForTokens';
+                    functionName = route.isExactInput
+                        ? 'swapReserveExactTokensForTokens'
+                        : 'swapReserveTokensForExactTokens';
                     params = [
                         step.path[2].address.toString(),
                         step.path[1].address.toString(),
                         (step as ReserveRouteNode).ikPair.toString(),
-                        step.amountInBn,
-                        step.minAmountOutBn,
+                        route.isExactInput ? step.amountInBn : step.amountOutBn,
+                        step.slippageThresholdAmountBn,
                         signerAddress,
                         futureTs,
                     ];
@@ -410,324 +425,35 @@ export class Router {
         return result;
     }
 
-    private calculateRouteAmountsOut(
+    private calculateRouteAmounts(
         candidates: Array<SwapCandidate>,
-        route: Array<ethers.BigNumber>
+        route: Array<ethers.BigNumber>,
+        isExactInput: boolean
     ): Array<ethers.BigNumber> {
         let localCandidates = cloneDeep(candidates);
-        let amountsOut = new Array(candidates.length).fill(
+        let amounts = new Array(candidates.length).fill(
             ethers.BigNumber.from(0)
         );
         try {
             for (let k = 0; k < localCandidates.length; ++k) {
                 if (!route[k].isZero()) {
-                    amountsOut[k] = localCandidates[k].getAmountOut(route[k]);
-                    localCandidates[k].emulateTrade(route[k]);
+                    amounts[k] = isExactInput
+                        ? localCandidates[k].getAmountOut(route[k])
+                        : localCandidates[k].getAmountIn(route[k]);
+                    localCandidates[k].emulateTrade(route[k], isExactInput);
                 }
             }
         } catch (e) {
-            amountsOut = amountsOut.fill(ethers.BigNumber.from(0));
+            amounts = amounts.fill(ethers.BigNumber.from(0));
         }
-        return amountsOut;
-    }
-}
-
-interface SwapCandidate {
-    readonly pair: DirectedPair;
-
-    getAmountOut(amountIn: ethers.BigNumber): ethers.BigNumber;
-
-    emulateTrade(amountIn: ethers.BigNumber): void;
-
-    routeNode(
-        amountIn: ethers.BigNumber,
-        amountOut: ethers.BigNumber,
-        minAmountOut: ethers.BigNumber
-    ): RouteNode;
-}
-
-class DirectCandidate implements SwapCandidate {
-    readonly pair: DirectedPair;
-
-    constructor(directedPair: DirectedPair) {
-        this.pair = directedPair;
+        return amounts;
     }
 
-    getAmountOut(amountIn: ethers.BigNumber): ethers.BigNumber {
-        return this.pair.getAmountOut(amountIn);
-    }
-
-    emulateTrade(amountIn: ethers.BigNumber): void {
-        this.pair.swapExactInput(amountIn);
-    }
-
-    routeNode(
-        amountIn: ethers.BigNumber,
-        amountOut: ethers.BigNumber,
-        minAmountOut: ethers.BigNumber
-    ): BaseRouteNode {
-        return {
-            amountInBn: amountIn,
-            amountOutBn: amountOut,
-            minAmountOutBn: minAmountOut,
-            type: SwapType.DIRECT,
-            path: [this.pair.token0, this.pair.token1],
-        };
-    }
-}
-
-class TriangularCandidate implements SwapCandidate {
-    readonly pair: DirectedPair;
-    readonly secondaryPair: DirectedPair;
-
-    constructor(pair0: DirectedPair, pair1: DirectedPair) {
-        this.pair = pair0;
-        this.secondaryPair = pair1;
-    }
-
-    getAmountOut(amountIn: ethers.BigNumber): ethers.BigNumber {
-        return this.secondaryPair.getAmountOut(
-            this.pair.getAmountOut(amountIn)
-        );
-    }
-
-    emulateTrade(amountIn: ethers.BigNumber): void {
-        this.secondaryPair.swapExactInput(this.pair.swapExactInput(amountIn));
-    }
-
-    routeNode(
-        amountIn: ethers.BigNumber,
-        amountOut: ethers.BigNumber,
-        minAmountOut: ethers.BigNumber
-    ): BaseRouteNode {
-        return {
-            amountInBn: amountIn,
-            amountOutBn: amountOut,
-            minAmountOutBn: minAmountOut,
-            type: SwapType.TRIANGULAR,
-            path: [
-                this.pair.token0,
-                this.pair.token1,
-                this.secondaryPair.token1,
-            ],
-        };
-    }
-}
-
-class ReserveCandidate implements SwapCandidate {
-    readonly pair: DirectedPair;
-    readonly referencePair: DirectedPair;
-
-    constructor(jkPair: DirectedPair, ikPair: DirectedPair) {
-        this.referencePair = ikPair;
-        this.pair = jkPair;
-    }
-
-    getAmountOut(amountIn: ethers.BigNumber): ethers.BigNumber {
-        const ret = this.pair.trySwapReserveToNative(
-            TokenWithBalance.fromBigNumber(this.referencePair.token0, amountIn),
-            this.virtualPair
-        );
-        return ret.length == 0
-            ? ethers.BigNumber.from(0)
-            : this.virtualPair.getAmountOut(amountIn);
-    }
-
-    emulateTrade(amountIn: ethers.BigNumber): void {
-        this.pair.swapReserveToNative(
-            TokenWithBalance.fromBigNumber(this.referencePair.token0, amountIn),
-            this.virtualPair
-        );
-    }
-
-    routeNode(
-        amountIn: ethers.BigNumber,
-        amountOut: ethers.BigNumber,
-        minAmountOut: ethers.BigNumber
-    ): ReserveRouteNode {
-        return {
-            amountInBn: amountIn,
-            amountOutBn: amountOut,
-            minAmountOutBn: minAmountOut,
-            type: SwapType.VIRTUAL,
-            ikPair: this.referencePair.address,
-            jkPair: this.pair.address,
-            path: [
-                this.referencePair.token0,
-                this.pair.token0,
-                this.pair.token1,
-            ],
-        };
-    }
-
-    private get virtualPair() {
-        const minCommonTokenBalance = this.referencePair.token1.balanceBN.lt(
-            this.pair.token0.balanceBN
-        )
-            ? this.referencePair.token1.balanceBN
-            : this.pair.token0.balanceBN;
-        return new DirectedPair(
-            new Address(''),
-            TokenWithBalance.fromBigNumber(
-                this.referencePair.token0,
-                this.referencePair.token0.balanceBN
-                    .mul(minCommonTokenBalance)
-                    .div(this.referencePair.token1.balanceBN)
-            ),
-            TokenWithBalance.fromBigNumber(
-                this.pair.token1,
-                this.pair.token1.balanceBN
-                    .mul(minCommonTokenBalance)
-                    .div(this.pair.token0.balanceBN)
-            ),
-            this.pair.token1,
-            [],
-            0,
-            this.pair.vFee,
-            this.pair.vFee
-        );
-    }
-}
-
-class DirectedPair {
-    static PRICE_FEE_FACTOR = 1000;
-    static RESERVE_RATIO_FACTOR = 100000;
-
-    readonly address: Address;
-    readonly token0: TokenWithBalance;
-    readonly token1: TokenWithBalance;
-    readonly referenceToken: Token;
-    readonly reserves: Array<PairReserve>;
-    readonly maxReserveRatio: number;
-    readonly fee: number;
-    readonly vFee: number;
-
-    constructor(
-        address: Address,
-        token0: TokenWithBalance,
-        token1: TokenWithBalance,
-        referenceToken: Token,
-        reserves: Array<PairReserve>,
-        maxReserveRatio: number,
-        fee: number,
-        vFee: number
-    ) {
-        this.address = address;
-        this.token0 = token0;
-        this.token1 = token1;
-        this.referenceToken = referenceToken;
-        this.reserves = reserves;
-        this.maxReserveRatio = maxReserveRatio;
-        this.fee = fee;
-        this.vFee = vFee;
-    }
-
-    trySwapReserveToNative(
-        reserveToken: TokenWithBalance,
-        virtualPair: DirectedPair
-    ): Array<any> {
-        const emptyReserve: PairReserve = PairReserve.empty(
-            this.referenceToken,
-            reserveToken
-        );
-        const amountOut = virtualPair.getAmountOut(reserveToken.balanceBN);
-        if (amountOut.gt(this.token1.balanceBN))
-            throw new Error('AmountOut is greater than balance1');
-
-        const updatedBalance1 = this.token1.balanceBN.sub(amountOut);
-
-        const updatedReserve = this.calculateUpdatedReservesBalance(
-            reserveToken,
-            virtualPair
-        );
-
-        const currentRes =
-            this.reserves.find((res) =>
-                res.reserveToken.address.eq(reserveToken.address)
-            ) ?? emptyReserve;
-
-        const rbvSum = this.reserves
-            .reduce(
-                (result, current) => result.add(current.baseToken.balanceBN),
-                ethers.BigNumber.from('0')
-            )
-            .sub(currentRes.baseToken.balanceBN)
-            .add(updatedReserve.baseToken.balanceBN);
-
-        const newReserveRatio = rbvSum
-            .mul(DirectedPair.RESERVE_RATIO_FACTOR)
-            .div(
-                (this.token0.address.eq(this.referenceToken.address)
-                    ? this.token0.balanceBN
-                    : updatedBalance1
-                ).mul(2)
-            );
-
-        return newReserveRatio.lte(this.maxReserveRatio)
-            ? [updatedReserve, updatedBalance1]
-            : [];
-    }
-
-    getAmountOut(amountIn: ethers.BigNumber): ethers.BigNumber {
-        return amountIn
-            .mul(this.fee)
-            .mul(this.token1.balanceBN)
-            .div(
-                this.token0.balanceBN
-                    .mul(DirectedPair.PRICE_FEE_FACTOR)
-                    .add(amountIn.mul(this.fee))
-            );
-    }
-
-    swapExactInput(amountIn: ethers.BigNumber): ethers.BigNumber {
-        const amountOut = this.getAmountOut(amountIn);
-        if (amountOut.gt(this.token1.balanceBN))
-            throw new Error('AmountOut is greater than balance1');
-        this.token0.balanceBN = this.token1.balanceBN.add(amountIn);
-        this.token1.balanceBN = this.token1.balanceBN.sub(amountOut);
-        return amountOut;
-    }
-
-    swapReserveToNative(
-        reserveToken: TokenWithBalance,
-        virtualPool: DirectedPair
-    ): void {
-        const ret = this.trySwapReserveToNative(reserveToken, virtualPool);
-        if (ret.length > 0) {
-            const idx = this.reserves.findIndex((reserve) =>
-                reserve.reserveToken.address.eq(reserveToken.address)
-            );
-            this.reserves.splice(idx, idx == -1 ? 0 : 1, ret[0]);
-            this.token1.balanceBN = ret[1];
+    private negateBigNumber(x: ethers.BigNumber): ethers.BigNumber {
+        if (x.toString().startsWith('-')) {
+            return ethers.BigNumber.from(x.toString().slice(1));
         } else {
-            throw new Error('Failed to swap reserve to native');
+            return ethers.BigNumber.from('-' + x.toString());
         }
-    }
-
-    private calculateUpdatedReservesBalance(
-        reserveToken: TokenWithBalance,
-        virtualPair: DirectedPair
-    ): PairReserve {
-        const emptyReserve: PairReserve = PairReserve.empty(
-            this.referenceToken,
-            reserveToken
-        );
-        const currentReserves =
-            this.reserves.find((reserve) =>
-                reserve.reserveToken.address.eq(reserveToken.address)
-            ) ?? emptyReserve;
-        currentReserves.reserveToken.balanceBN = reserveToken.balanceBN.add(
-            currentReserves.reserveToken.balanceBN
-        );
-        currentReserves.baseToken.balanceBN = virtualPair.token1.balanceBN
-            .mul(currentReserves.reserveToken.balanceBN)
-            .div(virtualPair.token0.balanceBN);
-        if (virtualPair.token1.address.neq(this.referenceToken.address)) {
-            currentReserves.baseToken.balanceBN =
-                currentReserves.baseToken.balanceBN
-                    .mul(this.token0.balanceBN)
-                    .div(this.token1.balanceBN);
-        }
-        return currentReserves;
     }
 }
