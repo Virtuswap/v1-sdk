@@ -199,14 +199,16 @@ describe('Router', () => {
         );
         const expectedMulticallData =
             '0x5caf6ff000000000000000000000000094b47ebe537c9ac7b37bdf7a5f68e7b6a1f16eab000000000000000000000000220db2b860f817d43b6ee2733735274e51e7a491000000000000000000000000d0b12762620af08ddcf9c72f61d0d54c865b46ef00000000000000000000000000000000000000000000000000000000000f4240000000000000000000000000000000000000000000000000000155da143338ab0000000000000000000000008fd379246834eac74b8419ffda202cf8051f7a030000000000000000000000000000000000000000000000000000000017d90aa0';
-        await router.executeRoute(
-            route,
-            new ethers.Wallet(
-                'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-                new ethers.providers.JsonRpcProvider(
-                    'https://public.stackup.sh/api/v1/node/arbitrum-sepolia'
-                )
+        const signer = new ethers.Wallet(
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            new ethers.providers.JsonRpcProvider(
+                'https://public.stackup.sh/api/v1/node/arbitrum-sepolia'
             )
+        );
+        await router.executeMulticall(
+            Chain.ARBITRUM_TESTNET,
+            await router.generateMulticallData(route, signer),
+            signer
         );
         expect(multicallMock).toHaveBeenLastCalledWith([expectedMulticallData]);
     });
@@ -229,14 +231,16 @@ describe('Router', () => {
         );
         const expectedMulticallData =
             '0x5804636200000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000dcb78c2ada97a7d0000000000000000000000008fd379246834eac74b8419ffda202cf8051f7a030000000000000000000000000000000000000000000000000000000017d90aa000000000000000000000000000000000000000000000000000000000000000020000000000000000000000004303d1d547fafa114f90b85356275c89465a60bf0000000000000000000000006c06aa45c300a55a810b4b36c73d861cc8708833';
-        await router.executeRoute(
-            route,
-            new ethers.Wallet(
-                'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-                new ethers.providers.JsonRpcProvider(
-                    'https://public.stackup.sh/api/v1/node/arbitrum-sepolia'
-                )
+        const signer = new ethers.Wallet(
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            new ethers.providers.JsonRpcProvider(
+                'https://public.stackup.sh/api/v1/node/arbitrum-sepolia'
             )
+        );
+        await router.executeMulticall(
+            Chain.ARBITRUM_TESTNET,
+            await router.generateMulticallData(route, signer),
+            signer
         );
         expect(multicallMock).toHaveBeenLastCalledWith([expectedMulticallData]);
     });
@@ -259,14 +263,16 @@ describe('Router', () => {
         );
         const expectedMulticallData =
             '0x5804636200000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000000000d6062b450540000000000000000000000008fd379246834eac74b8419ffda202cf8051f7a030000000000000000000000000000000000000000000000000000000017d90aa0000000000000000000000000000000000000000000000000000000000000000300000000000000000000000058e948c6e48d3ebc909332e22972101425109bf4000000000000000000000000220db2b860f817d43b6ee2733735274e51e7a49100000000000000000000000094b47ebe537c9ac7b37bdf7a5f68e7b6a1f16eab';
-        await router.executeRoute(
-            route,
-            new ethers.Wallet(
-                'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-                new ethers.providers.JsonRpcProvider(
-                    'https://public.stackup.sh/api/v1/node/arbitrum-sepolia'
-                )
+        const signer = new ethers.Wallet(
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            new ethers.providers.JsonRpcProvider(
+                'https://public.stackup.sh/api/v1/node/arbitrum-sepolia'
             )
+        );
+        await router.executeMulticall(
+            Chain.ARBITRUM_TESTNET,
+            await router.generateMulticallData(route, signer),
+            signer
         );
         expect(multicallMock).toHaveBeenLastCalledWith([expectedMulticallData]);
     });

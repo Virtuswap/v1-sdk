@@ -158,19 +158,14 @@ export class Router {
         };
     }
 
-    async executeRoute(
+    async generateMulticallData(
         route: Route,
         signer: ethers.Signer
-    ): Promise<TransactionResponse> {
-        const routerContract = new ethers.Contract(
-            chainInfo[route.chain].routerAddress.toString(),
-            vRouterAbi,
-            signer
-        );
+    ): Promise<string[]> {
         const routerInterface = new ethers.utils.Interface(vRouterAbi);
         const futureTs = (await getBlockTimestamp(route.chain)) + 100000;
         const signerAddress = await signer.getAddress();
-        const multicallData = route.steps.map((step) => {
+        return route.steps.map((step) => {
             let functionName = 'undefined';
             let params: any[] = [];
             // TODO: add native tokens support
@@ -201,6 +196,18 @@ export class Router {
             }
             return routerInterface.encodeFunctionData(functionName, params);
         });
+    }
+
+    async executeMulticall(
+        chain: Chain,
+        multicallData: string[],
+        signer: ethers.Signer
+    ): Promise<TransactionResponse> {
+        const routerContract = new ethers.Contract(
+            chainInfo[chain].routerAddress.toString(),
+            vRouterAbi,
+            signer
+        );
         return await routerContract.multicall(multicallData);
     }
 
