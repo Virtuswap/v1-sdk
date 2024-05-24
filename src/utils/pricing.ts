@@ -15,7 +15,9 @@ export async function getMultipleTokensPriceUsd(
         let response = await axios.get(
             `https://api.virtuswap.io/tokensPricesUsd?${params}`
         );
-        return response.status === 200 ? response.data : [];
+        return response.data.length == tokensAddresses.length
+            ? response.data
+            : [];
     } catch (e) {
         console.log(`Error fetching usd price: ${e}`);
         return [];
