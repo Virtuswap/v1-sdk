@@ -4,7 +4,7 @@ export enum Chain {
     POLYGON_MAINNET = 137,
     ARBITRUM_MAINNET = 42161,
 
-    POLYGON_TESTNET = 80001,
+    POLYGON_TESTNET = 80002,
     ARBITRUM_TESTNET = 421614,
 }
 
@@ -32,11 +32,10 @@ export const chainInfo: ChainInfo = {
             '0xB455da5a32E7E374dB6d1eDfdb86C167DD983f40'
         ),
         useBlockTimestamp: true,
-        coingeckoId: 'arbitrum-one',
     },
     /*** TESTNET ***/
     // POLYGON
-    80001: {
+    80002: {
         routerAddress: new Address(
             '0x67502dEa89Be276f3E0a2bB5864fa946d3471c38'
         ),

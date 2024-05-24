@@ -7,8 +7,7 @@ import { Chain, chainInfo } from '../src/entities/chain';
 describe('Chain parameters', () => {
     test('chain id is set correctly', async () => {
         expect(Chain.POLYGON_MAINNET).toEqual(137);
-        // TODO: replace with Amoy testnet chain id
-        expect(Chain.POLYGON_TESTNET).toEqual(80001);
+        expect(Chain.POLYGON_TESTNET).toEqual(80002);
         expect(Chain.ARBITRUM_MAINNET).toEqual(42161);
         expect(Chain.ARBITRUM_TESTNET).toEqual(421614);
     });
