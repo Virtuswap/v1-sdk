@@ -58,8 +58,6 @@ export async function getTopPairsForToken(
         tokensAddresses
     );
 
-    if (tokensAddresses.length != tokensPriceUsd.length) return [];
-
     const tokensWithUsdPrices = tokensAddresses.map((t, i) => {
         return { token: t, priceUsd: tokensPriceUsd[i] };
     });
