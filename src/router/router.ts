@@ -1,6 +1,5 @@
 import { ethers } from 'ethers';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
-import cloneDeep from 'lodash/cloneDeep';
 
 import { Token, TokenWithBalance } from '../entities/token';
 import { Pair, PairReserve } from '../entities/pair';
@@ -407,20 +406,24 @@ export class Router {
         candidates: Array<SwapCandidate>,
         route: Array<ethers.BigNumber>
     ): Array<ethers.BigNumber> {
-        let localCandidates = cloneDeep(candidates);
         let amountsOut = new Array(candidates.length).fill(
             ethers.BigNumber.from(0)
         );
         try {
-            for (let k = 0; k < localCandidates.length; ++k) {
+            for (let k = 0; k < candidates.length; ++k) {
                 if (!route[k].isZero()) {
-                    amountsOut[k] = localCandidates[k].getAmountOut(route[k]);
-                    localCandidates[k].emulateTrade(route[k]);
+                    amountsOut[k] = candidates[k].getAmountOut(route[k]);
+                    candidates[k].emulateTrade(route[k]);
                 }
             }
         } catch (e) {
             amountsOut = amountsOut.fill(ethers.BigNumber.from(0));
+        } finally {
+            for (let k = 0; k < candidates.length; ++k) {
+                candidates[k].revert();
+            }
         }
+
         return amountsOut;
     }
 }
@@ -431,6 +434,8 @@ interface SwapCandidate {
     getAmountOut(amountIn: ethers.BigNumber): ethers.BigNumber;
 
     emulateTrade(amountIn: ethers.BigNumber): void;
+
+    revert(): void;
 
     routeNode(
         amountIn: ethers.BigNumber,
@@ -452,6 +457,10 @@ class DirectCandidate implements SwapCandidate {
 
     emulateTrade(amountIn: ethers.BigNumber): void {
         this.pair.swapExactInput(amountIn);
+    }
+
+    revert(): void {
+        this.pair.revert();
     }
 
     routeNode(
@@ -486,6 +495,11 @@ class TriangularCandidate implements SwapCandidate {
 
     emulateTrade(amountIn: ethers.BigNumber): void {
         this.secondaryPair.swapExactInput(this.pair.swapExactInput(amountIn));
+    }
+
+    revert(): void {
+        this.pair.revert();
+        this.secondaryPair.revert();
     }
 
     routeNode(
@@ -531,6 +545,11 @@ class ReserveCandidate implements SwapCandidate {
             TokenWithBalance.fromBigNumber(this.referencePair.token0, amountIn),
             this.virtualPair
         );
+    }
+
+    revert(): void {
+        this.pair.revert();
+        this.referencePair.revert();
     }
 
     routeNode(
@@ -582,6 +601,17 @@ class ReserveCandidate implements SwapCandidate {
     }
 }
 
+type DirectedPairMutablePairReserve = {
+    index: number;
+    value: PairReserve;
+};
+
+type DirectedPairMutableFields = {
+    token0BalanceBN?: ethers.BigNumber;
+    token1BalanceBN?: ethers.BigNumber;
+    reserve?: DirectedPairMutablePairReserve;
+};
+
 class DirectedPair {
     static PRICE_FEE_FACTOR = 1000;
     static RESERVE_RATIO_FACTOR = 100000;
@@ -594,6 +624,8 @@ class DirectedPair {
     readonly maxReserveRatio: number;
     readonly fee: number;
     readonly vFee: number;
+
+    private initialValues: DirectedPairMutableFields = {};
 
     constructor(
         address: Address,
@@ -672,11 +704,33 @@ class DirectedPair {
             );
     }
 
+    revert() {
+        if (this.initialValues.token0BalanceBN) {
+            this.token0.balanceBN = this.initialValues.token0BalanceBN;
+            this.initialValues.token0BalanceBN = undefined;
+        }
+        if (this.initialValues.token1BalanceBN) {
+            this.token1.balanceBN = this.initialValues.token1BalanceBN;
+            this.initialValues.token1BalanceBN = undefined;
+        }
+        if (this.initialValues.reserve) {
+            this.reserves[this.initialValues.reserve.index] =
+                this.initialValues.reserve.value;
+            this.initialValues.reserve = undefined;
+        }
+    }
+
     swapExactInput(amountIn: ethers.BigNumber): ethers.BigNumber {
         const amountOut = this.getAmountOut(amountIn);
         if (amountOut.gt(this.token1.balanceBN))
             throw new Error('AmountOut is greater than balance1');
-        this.token0.balanceBN = this.token1.balanceBN.add(amountIn);
+        if (!this.initialValues.token0BalanceBN) {
+            this.initialValues.token0BalanceBN = this.token0.balanceBN;
+        }
+        if (!this.initialValues.token1BalanceBN) {
+            this.initialValues.token1BalanceBN = this.token1.balanceBN;
+        }
+        this.token0.balanceBN = this.token0.balanceBN.add(amountIn);
         this.token1.balanceBN = this.token1.balanceBN.sub(amountOut);
         return amountOut;
     }
@@ -690,6 +744,21 @@ class DirectedPair {
             const idx = this.reserves.findIndex((reserve) =>
                 reserve.reserveToken.address.eq(reserveToken.address)
             );
+            if (!this.initialValues.token1BalanceBN) {
+                this.initialValues.token1BalanceBN = this.token1.balanceBN;
+            }
+            if (!this.initialValues.reserve) {
+                this.initialValues.reserve = {
+                    index: idx == -1 ? this.reserves.length - 1 : idx,
+                    value:
+                        idx == -1
+                            ? PairReserve.empty(
+                                  this.referenceToken,
+                                  reserveToken
+                              )
+                            : this.reserves[idx],
+                };
+            }
             this.reserves.splice(idx, idx == -1 ? 0 : 1, ret[0]);
             this.token1.balanceBN = ret[1];
         } else {
@@ -701,16 +770,17 @@ class DirectedPair {
         reserveToken: TokenWithBalance,
         virtualPair: DirectedPair
     ): PairReserve {
-        const emptyReserve: PairReserve = PairReserve.empty(
+        let currentReserves: PairReserve = PairReserve.empty(
             this.referenceToken,
             reserveToken
         );
-        const currentReserves =
-            this.reserves.find((reserve) =>
-                reserve.reserveToken.address.eq(reserveToken.address)
-            ) ?? emptyReserve;
+        const prevReserves = this.reserves.find((reserve) =>
+            reserve.reserveToken.address.eq(reserveToken.address)
+        );
         currentReserves.reserveToken.balanceBN = reserveToken.balanceBN.add(
-            currentReserves.reserveToken.balanceBN
+            prevReserves
+                ? prevReserves.reserveToken.balanceBN
+                : ethers.BigNumber.from(0)
         );
         currentReserves.baseToken.balanceBN = virtualPair.token1.balanceBN
             .mul(currentReserves.reserveToken.balanceBN)
