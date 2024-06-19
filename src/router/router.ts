@@ -43,14 +43,16 @@ export type Route = {
 
 export type SwapOptions = {
     slippage: number;
+    timeoutMs: number;
 };
 
 export class Router {
     swapOptions: SwapOptions;
 
-    constructor(slippage = 1000) {
+    constructor(swapOptions?: Partial<SwapOptions>) {
         this.swapOptions = {
-            slippage,
+            slippage: swapOptions?.slippage ?? 1000,
+            timeoutMs: swapOptions?.timeoutMs ?? 5000,
         };
         this.pairsCache = new Array();
         this.directedPairsCache = new Map();
@@ -62,6 +64,7 @@ export class Router {
         chain: Chain,
         swapOptions?: SwapOptions
     ): Promise<Route> {
+        const t0 = performance.now();
         if (!swapOptions) swapOptions = this.swapOptions;
         this.pairsCache = await getAllPairs(chain);
         this.directedPairsCache.clear();
@@ -80,7 +83,7 @@ export class Router {
             maxRoute
         ).reduce((current, sum) => sum.add(current), ethers.BigNumber.from(0));
 
-        let step = tokenIn.balanceBN.div(2);
+        let step = tokenIn.balanceBN;
         while (!step.isZero()) {
             let nextMaxAmountOut = ethers.BigNumber.from(0);
             let [from, to] = [0, 0];
@@ -114,6 +117,8 @@ export class Router {
             } else {
                 step = step.div(2);
             }
+            const t1 = performance.now();
+            if (t1 - t0 >= swapOptions.timeoutMs) break;
         }
         const amountsOut = this.calculateRouteAmountsOut(candidates, maxRoute);
         const minAmountsOut = amountsOut.map((amount) =>
