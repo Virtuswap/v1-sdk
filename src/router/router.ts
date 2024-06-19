@@ -62,7 +62,7 @@ export class Router {
         chain: Chain,
         swapOptions?: SwapOptions
     ): Promise<Route> {
-        if (swapOptions) this.swapOptions = swapOptions;
+        if (!swapOptions) swapOptions = this.swapOptions;
         this.pairsCache = await getAllPairs(chain);
         this.directedPairsCache.clear();
 
@@ -117,7 +117,7 @@ export class Router {
         }
         const amountsOut = this.calculateRouteAmountsOut(candidates, maxRoute);
         const minAmountsOut = amountsOut.map((amount) =>
-            amount.sub(amount.div(this.swapOptions.slippage))
+            amount.sub(amount.div(swapOptions.slippage))
         );
         const tokenOutWithBalance = TokenWithBalance.fromBigNumber(
             tokenOut,
