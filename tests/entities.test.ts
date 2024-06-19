@@ -1,6 +1,5 @@
 import { ethers } from 'ethers';
-import { Address } from '../src/entities/utils';
-import { Token, TokenWithBalance } from '../src/entities/token';
+import { Erc20Token, TokenWithBalance } from '../src/entities/token';
 import { Pair, PairReserve } from '../src/entities/pair';
 import { Chain, chainInfo } from '../src/entities/chain';
 
@@ -27,47 +26,26 @@ describe('Chain parameters', () => {
     });
 });
 
-describe('Address', () => {
-    const upperCaseAddress1 = new Address(
-        '0x0123456789ABCDEF0123456789ABCDEF01234567'
-    );
-    const lowerCaseAddress1 = new Address(
-        '0x0123456789abcdef0123456789abcdef01234567'
-    );
-    const mixedCaseAddress1 = new Address(
-        '0x0123456789abcDEF0123456789abCDef01234567'
-    );
-    const upperCaseAddress2 = new Address(
-        '0x76543210FEDCBA9876543210FEDCBA9876543210'
-    );
-    const lowerCaseAddress2 = new Address(
-        '0x76543210fedcba9876543210fedcba9876543210'
-    );
-    const mixedCaseAddress2 = new Address(
-        '0x76543210FEDcba9876543210fEdCbA9876543210'
-    );
-
-    test('comparison works', async () => {
-        expect(upperCaseAddress1.eq(lowerCaseAddress1)).toBeTruthy;
-        expect(mixedCaseAddress1.eq(lowerCaseAddress1)).toBeTruthy;
-        expect(mixedCaseAddress1.eq(lowerCaseAddress1)).toBeTruthy;
-        expect(upperCaseAddress1.neq(upperCaseAddress2)).toBeTruthy;
-        expect(upperCaseAddress1.neq(lowerCaseAddress2)).toBeTruthy;
-        expect(upperCaseAddress1.neq(mixedCaseAddress2)).toBeTruthy;
-    });
-
-    test('toString works', async () => {
-        expect(upperCaseAddress1.toString()).toEqual(
-            lowerCaseAddress1.toString()
-        );
-        expect(mixedCaseAddress1.toString()).toEqual(
-            lowerCaseAddress1.toString()
-        );
-    });
-});
-
 describe('Token', () => {
-    const token = new Token('0x0123456789ABCDEF0123456789ABCDEF01234567', 18);
+    const token = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x0123456789ABCDEF0123456789ABCDEF01234567', 18);
+
+    test('passing wrong address fails', async () => {
+        const wrongAddresses = [
+            // without 0x
+            '0000000000000000000000000000000000000000',
+            // less than 42 symbols
+            '0x00000000000000000000000000000000000000',
+            // invalid hex values
+            '0x00000000K0000000000000000000000000000000',
+            '0x00000000,0000000000000000000000000000000',
+            '0X0000000000000000000000000000000000000000',
+            '1x0000000000000000000000000000000000000000',
+            '0a0000000000000000000000000000000000000000',
+        ];
+        for (const wrongAddress of wrongAddresses) {
+            expect(() => new Erc20Token(Chain.ARBITRUM_TESTNET, wrongAddress, 18)).toThrow(`address ${wrongAddress} is not valid`);
+        }
+    });
 
     test('constructors work', async () => {
         const tokenWithBalance = TokenWithBalance.fromDecimal(
@@ -76,6 +54,19 @@ describe('Token', () => {
         );
         expect(tokenWithBalance.balanceBN.eq('123456789123456789')).toBeTruthy;
         expect(tokenWithBalance.balance).toEqual('0.123456789123456789');
+    });
+
+    test('tokenWithBalance constructor fails if wrong balance is passed', async () => {
+        const wrongBalances = [
+            '.0',
+            '00.123',
+            '0,123',
+            '01.123',
+            '1.',
+        ];
+        for (const wrongBalance of wrongBalances) {
+            expect(() => TokenWithBalance.fromDecimal(token, wrongBalance)).toThrow(`balance ${wrongBalance} is not valid`);
+        }
     });
 
     test('getters work', async () => {
@@ -105,8 +96,8 @@ describe('Token', () => {
 });
 
 describe('PairReserve', () => {
-    const token1 = new Token('0x0123456789ABCDEF0123456789ABCDEF01234567', 18);
-    const token2 = new Token('0x76543210FEDCBA9876543210FEDCBA9876543210', 6);
+    const token1 = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x0123456789ABCDEF0123456789ABCDEF01234567', 18);
+    const token2 = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x76543210FEDCBA9876543210FEDCBA9876543210', 6);
     const token1WithBalance = TokenWithBalance.fromDecimal(
         token1,
         '0.123456789123456789'
@@ -117,11 +108,11 @@ describe('PairReserve', () => {
         const emptyPairReserve = PairReserve.empty(token1, token2);
         expect(emptyPairReserve.baseToken.balanceBN.eq('0')).toBeTruthy;
         expect(emptyPairReserve.reserveToken.balanceBN.eq('0')).toBeTruthy;
-        expect(emptyPairReserve.baseToken.address).toEqual(
-            new Address('0x0123456789ABCDEF0123456789ABCDEF01234567')
+        expect(emptyPairReserve.baseToken.token.address).toEqual(
+            ethers.utils.getAddress('0x0123456789abcdef0123456789abcdef01234567')
         );
-        expect(emptyPairReserve.reserveToken.address).toEqual(
-            new Address('0x76543210FEDCBA9876543210FEDCBA9876543210')
+        expect(emptyPairReserve.reserveToken.token.address).toEqual(
+            ethers.utils.getAddress('0x76543210fedcba9876543210fedcba9876543210')
         );
 
         const pairReserve = new PairReserve(
@@ -131,22 +122,22 @@ describe('PairReserve', () => {
         expect(pairReserve.baseToken.balanceBN.eq('123456789123456789'))
             .toBeTruthy;
         expect(pairReserve.reserveToken.balanceBN.eq('123456')).toBeTruthy;
-        expect(pairReserve.baseToken.address).toEqual(
-            new Address('0x0123456789ABCDEF0123456789ABCDEF01234567')
+        expect(pairReserve.baseToken.token.address).toEqual(
+            ethers.utils.getAddress('0x0123456789abcdef0123456789abcdef01234567')
         );
-        expect(pairReserve.reserveToken.address).toEqual(
-            new Address('0x76543210FEDCBA9876543210FEDCBA9876543210')
+        expect(pairReserve.reserveToken.token.address).toEqual(
+            ethers.utils.getAddress('0x76543210fedcba9876543210fedcba9876543210')
         );
     });
 });
 
 describe('Pair', () => {
-    const token1 = new Token('0x0123456789ABCDEF0123456789ABCDEF01234567', 18);
-    const token2 = new Token('0x76543210FEDCBA9876543210FEDCBA9876543210', 6);
-    const token3 = new Token('0x1000000000000000000000000000000000000003', 8);
-    const token4 = new Token('0x1000000000000000000000000000000000000004', 4);
+    const token1 = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x0123456789ABCDEF0123456789ABCDEF01234567', 18);
+    const token2 = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x76543210FEDCBA9876543210FEDCBA9876543210', 6);
+    const token3 = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x1000000000000000000000000000000000000003', 8);
+    const token4 = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x1000000000000000000000000000000000000004', 4);
     const pair1 = new Pair(
-        new Address('0xabacabadaba0123456789abacabadaba01234567'),
+        '0xabacabadaba0123456789abacabadaba01234567',
         TokenWithBalance.fromDecimal(token1, '0.123456789123456789'),
         TokenWithBalance.fromDecimal(token2, '0.123456'),
         40,
@@ -156,11 +147,11 @@ describe('Pair', () => {
         997,
         2000,
         100,
-        [token1.address, token2.address, token3.address],
+        [token1, token2, token3],
         []
     );
     const pair2 = new Pair(
-        new Address('0x0000000000000000000000000000000000000002'),
+        '0x0000000000000000000000000000000000000002',
         TokenWithBalance.fromDecimal(token2, '0.123456'),
         TokenWithBalance.fromDecimal(token3, '0.12345678'),
         40,
@@ -170,11 +161,11 @@ describe('Pair', () => {
         997,
         2000,
         100,
-        [token1.address],
+        [token1],
         []
     );
     const pair3 = new Pair(
-        new Address('0x0000000000000000000000000000000000000003'),
+        '0x0000000000000000000000000000000000000003',
         TokenWithBalance.fromDecimal(token1, '0.123456789987654321'),
         TokenWithBalance.fromDecimal(token3, '0.12345678'),
         40,
@@ -188,7 +179,7 @@ describe('Pair', () => {
         []
     );
     const pair4 = new Pair(
-        new Address('0x0000000000000000000000000000000000000004'),
+        '0x0000000000000000000000000000000000000004',
         TokenWithBalance.fromDecimal(token1, '0.123456789987654321'),
         TokenWithBalance.fromDecimal(token4, '0.1234'),
         40,
