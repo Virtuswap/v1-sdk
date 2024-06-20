@@ -3,7 +3,6 @@ import { ethers } from 'ethers';
 import { DirectedPair } from './directedPair';
 
 import { TokenWithBalance } from '../../entities/token';
-import { Address } from '../../entities/utils';
 import {
     RouteNode,
     BaseRouteNode,
@@ -178,7 +177,7 @@ export class ReserveCandidate implements SwapCandidate {
             ? this.referencePair.token1.balanceBN
             : this.pair.token0.balanceBN;
         return new DirectedPair(
-            new Address(''),
+            ethers.constants.AddressZero,
             TokenWithBalance.fromBigNumber(
                 this.referencePair.token0,
                 this.referencePair.token0.balanceBN

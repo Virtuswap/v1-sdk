@@ -16,7 +16,6 @@ import { Token, TokenWithBalance } from '../entities/token';
 import { Pair, PairReserve } from '../entities/pair';
 import { getBlockTimestamp, getBlockNumber } from '../dal/meta';
 import { Chain, chainInfo } from '../entities/chain';
-import { Address } from '../entities/utils';
 import { getAllPairs } from '../dal/pairs';
 import vRouterAbi from '../artifacts/vRouterAbi.json';
 import { getMultipleTokensPriceUsd } from '../utils/pricing';
@@ -137,8 +136,8 @@ export class Router {
         );
         const [tokenInPriceUsd, tokenOutPriceUsd] =
             await getMultipleTokensPriceUsd(chain, [
-                tokenIn.address.toString(),
-                tokenOut.address.toString(),
+                tokenIn.address,
+                tokenOut.address,
             ]);
         return {
             isExactInput: this.swapOptions.isExactInput!,
@@ -187,7 +186,7 @@ export class Router {
                         ? 'swapExactTokensForTokens'
                         : 'swapTokensForExactTokens';
                     params = [
-                        step.path.map((value) => value.address.toString()),
+                        step.path.map((value) => value.address),
                         route.isExactInput ? step.amountInBn : step.amountOutBn,
                         step.slippageThresholdAmountBn,
                         signerAddress,
@@ -199,9 +198,9 @@ export class Router {
                         ? 'swapReserveExactTokensForTokens'
                         : 'swapReserveTokensForExactTokens';
                     params = [
-                        step.path[2].address.toString(),
-                        step.path[1].address.toString(),
-                        (step as ReserveRouteNode).ikPair.toString(),
+                        step.path[2].address,
+                        step.path[1].address,
+                        (step as ReserveRouteNode).ikPair,
                         route.isExactInput ? step.amountInBn : step.amountOutBn,
                         step.slippageThresholdAmountBn,
                         signerAddress,
@@ -219,7 +218,7 @@ export class Router {
         signer: ethers.Signer
     ): Promise<TransactionResponse> {
         const routerContract = new ethers.Contract(
-            chainInfo[chain].routerAddress.toString(),
+            chainInfo[chain].routerAddress,
             vRouterAbi,
             signer
         );
@@ -257,7 +256,7 @@ export class Router {
     }
 
     private getOrCreateDirectedPair(
-        address: Address,
+        address: string,
         token0: TokenWithBalance,
         token1: TokenWithBalance,
         referenceToken: Token,
@@ -266,7 +265,8 @@ export class Router {
         maxReserveRatio: number,
         reserves: Array<PairReserve>
     ): DirectedPair {
-        if (!this.directedPairsCache.has(address.toString())) {
+        address = ethers.utils.getAddress(address);
+        if (!this.directedPairsCache.has(address)) {
             const newDirectedPair = new DirectedPair(
                 address,
                 token0,
@@ -277,9 +277,9 @@ export class Router {
                 fee,
                 vFee
             );
-            this.directedPairsCache.set(address.toString(), newDirectedPair);
+            this.directedPairsCache.set(address, newDirectedPair);
         }
-        return this.directedPairsCache.get(address.toString())!;
+        return this.directedPairsCache.get(address)!;
     }
 
     private getDirectSwapPairs(
@@ -295,10 +295,10 @@ export class Router {
             .map((pair) =>
                 this.getOrCreateDirectedPair(
                     pair.address,
-                    tokenIn.address.eq(pair.token0.address)
+                    tokenIn.address === pair.token0.address
                         ? pair.token0
                         : pair.token1,
-                    tokenOut.address.eq(pair.token0.address)
+                    tokenOut.address === pair.token0.address
                         ? pair.token0
                         : pair.token1,
                     pair.token0,
@@ -323,16 +323,16 @@ export class Router {
                 const commonToken = pair0.getCommonToken(pair1);
                 if (
                     commonToken &&
-                    pair0.address.neq(pair1.address) &&
-                    commonToken.address.neq(tokenIn.address) &&
-                    commonToken.address.neq(tokenOut.address)
+                    pair0.address !== pair1.address &&
+                    commonToken.address !== tokenIn.address &&
+                    commonToken.address !== tokenOut.address
                 ) {
                     const triangularSwapPair0 = this.getOrCreateDirectedPair(
                         pair0.address,
-                        tokenIn.address.eq(pair0.token0.address)
+                        tokenIn.address === pair0.token0.address
                             ? pair0.token0
                             : pair0.token1,
-                        commonToken.address.eq(pair0.token0.address)
+                        commonToken.address === pair0.token0.address
                             ? pair0.token0
                             : pair0.token1,
                         pair0.token0,
@@ -343,10 +343,10 @@ export class Router {
                     );
                     const triangularSwapPair1 = this.getOrCreateDirectedPair(
                         pair1.address,
-                        commonToken.address.eq(pair1.token0.address)
+                        commonToken.address === pair1.token0.address
                             ? pair1.token0
                             : pair1.token1,
-                        tokenOut.address.eq(pair1.token0.address)
+                        tokenOut.address === pair1.token0.address
                             ? pair1.token0
                             : pair1.token1,
                         pair1.token0,
@@ -387,14 +387,14 @@ export class Router {
             ikCandidates.forEach((ikPair) => {
                 if (ikPair.hasCommonTokenWith(jkPair)) {
                     const commonToken = ikPair.getCommonToken(jkPair)!;
-                    if (commonToken.address.neq(tokenIn.address)) {
+                    if (commonToken.address !== tokenIn.address) {
                         result.push([
                             this.getOrCreateDirectedPair(
                                 jkPair.address,
-                                commonToken.address.eq(jkPair.token0.address)
+                                commonToken.address === jkPair.token0.address
                                     ? jkPair.token0
                                     : jkPair.token1,
-                                tokenOut.address.eq(jkPair.token0.address)
+                                tokenOut.address === jkPair.token0.address
                                     ? jkPair.token0
                                     : jkPair.token1,
                                 jkPair.token0,
@@ -405,10 +405,10 @@ export class Router {
                             ),
                             this.getOrCreateDirectedPair(
                                 ikPair.address,
-                                tokenIn.address.eq(ikPair.token0.address)
+                                tokenIn.address === ikPair.token0.address
                                     ? ikPair.token0
                                     : ikPair.token1,
-                                commonToken.address.eq(ikPair.token0.address)
+                                commonToken.address === ikPair.token0.address
                                     ? ikPair.token0
                                     : ikPair.token1,
                                 ikPair.token0,

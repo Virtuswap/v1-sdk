@@ -2,13 +2,12 @@ import { ethers } from 'ethers';
 
 import { Token, TokenWithBalance } from '../../entities/token';
 import { PairReserve } from '../../entities/pair';
-import { Address } from '../../entities/utils';
 
 export class DirectedPair {
     static PRICE_FEE_FACTOR = 1000;
     static RESERVE_RATIO_FACTOR = 100000;
 
-    readonly address: Address;
+    readonly address: string;
     readonly token0: TokenWithBalance;
     readonly token1: TokenWithBalance;
     readonly referenceToken: Token;
@@ -18,7 +17,7 @@ export class DirectedPair {
     readonly vFee: number;
 
     constructor(
-        address: Address,
+        address: string,
         token0: TokenWithBalance,
         token1: TokenWithBalance,
         referenceToken: Token,
@@ -27,7 +26,7 @@ export class DirectedPair {
         fee: number,
         vFee: number
     ) {
-        this.address = address;
+        this.address = ethers.utils.getAddress(address);
         this.token0 = token0;
         this.token1 = token1;
         this.referenceToken = referenceToken;
@@ -40,7 +39,7 @@ export class DirectedPair {
     trySwapReserveToNative(
         reserveToken: TokenWithBalance,
         virtualPair: DirectedPair
-    ): Array<any> {
+    ): [PairReserve, ethers.BigNumber] | never[] {
         const emptyReserve: PairReserve = PairReserve.empty(
             this.referenceToken,
             reserveToken
@@ -57,8 +56,8 @@ export class DirectedPair {
         );
 
         const currentRes =
-            this.reserves.find((res) =>
-                res.reserveToken.address.eq(reserveToken.address)
+            this.reserves.find(
+                (res) => res.reserveToken.address === reserveToken.address
             ) ?? emptyReserve;
 
         const rbvSum = this.reserves
@@ -72,14 +71,14 @@ export class DirectedPair {
         const newReserveRatio = rbvSum
             .mul(DirectedPair.RESERVE_RATIO_FACTOR)
             .div(
-                (this.token0.address.eq(this.referenceToken.address)
+                (this.token0.address === this.referenceToken.address
                     ? this.token0.balanceBN
                     : updatedBalance1
                 ).mul(2)
             );
 
         return newReserveRatio.lte(this.maxReserveRatio)
-            ? [updatedReserve, updatedBalance1]
+            ? ([updatedReserve, updatedBalance1] as const)
             : [];
     }
 
@@ -126,8 +125,9 @@ export class DirectedPair {
     ): void {
         const ret = this.trySwapReserveToNative(reserveToken, virtualPool);
         if (ret.length > 0) {
-            const idx = this.reserves.findIndex((reserve) =>
-                reserve.reserveToken.address.eq(reserveToken.address)
+            const idx = this.reserves.findIndex(
+                (reserve) =>
+                    reserve.reserveToken.address === reserveToken.address
             );
             this.reserves.splice(idx, idx == -1 ? 0 : 1, ret[0]);
             this.token1.balanceBN = ret[1];
@@ -145,8 +145,9 @@ export class DirectedPair {
             reserveToken
         );
         const currentReserves =
-            this.reserves.find((reserve) =>
-                reserve.reserveToken.address.eq(reserveToken.address)
+            this.reserves.find(
+                (reserve) =>
+                    reserve.reserveToken.address === reserveToken.address
             ) ?? emptyReserve;
         currentReserves.reserveToken.balanceBN = reserveToken.balanceBN.add(
             currentReserves.reserveToken.balanceBN
@@ -154,7 +155,7 @@ export class DirectedPair {
         currentReserves.baseToken.balanceBN = virtualPair.token1.balanceBN
             .mul(currentReserves.reserveToken.balanceBN)
             .div(virtualPair.token0.balanceBN);
-        if (virtualPair.token1.address.neq(this.referenceToken.address)) {
+        if (virtualPair.token1.address !== this.referenceToken.address) {
             currentReserves.baseToken.balanceBN =
                 currentReserves.baseToken.balanceBN
                     .mul(this.token0.balanceBN)

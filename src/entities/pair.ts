@@ -1,22 +1,19 @@
 import { ethers } from 'ethers';
 
 import { Chain, chainInfo } from './chain';
-import { TokenWithBalance, Erc20Token } from './token';
+import { TokenWithBalance, Token } from './token';
 import { isAddressValid } from '../utils/validations';
 
 export class PairReserve {
-    public readonly reserveToken: TokenWithBalance<Erc20Token>;
-    public readonly baseToken: TokenWithBalance<Erc20Token>;
+    public readonly reserveToken: TokenWithBalance;
+    public readonly baseToken: TokenWithBalance;
 
-    constructor(
-        baseToken: TokenWithBalance<Erc20Token>,
-        reserveToken: TokenWithBalance<Erc20Token>
-    ) {
+    constructor(baseToken: TokenWithBalance, reserveToken: TokenWithBalance) {
         this.reserveToken = reserveToken;
         this.baseToken = baseToken;
     }
 
-    static empty(baseToken: Erc20Token, reserveToken: Erc20Token): PairReserve {
+    static empty(baseToken: Token, reserveToken: Token): PairReserve {
         return new PairReserve(
             TokenWithBalance.fromDecimal(baseToken, '0'),
             TokenWithBalance.fromDecimal(reserveToken, '0')
@@ -26,8 +23,8 @@ export class PairReserve {
 
 export class Pair {
     public readonly address: string;
-    public readonly token0: TokenWithBalance<Erc20Token>;
-    public readonly token1: TokenWithBalance<Erc20Token>;
+    public readonly token0: TokenWithBalance;
+    public readonly token1: TokenWithBalance;
     public readonly blocksDelay: number;
     public readonly lastSwapBlock: number;
     public readonly lastSwapTimestamp: number;
@@ -35,13 +32,13 @@ export class Pair {
     public readonly vFee: number;
     public readonly maxReserveRatio: number;
     public readonly reserveRatio: number;
-    public readonly allowList: Array<Erc20Token>;
+    public readonly allowList: Array<string>;
     public readonly reserves: Array<PairReserve>;
 
     constructor(
         address: string,
-        token0: TokenWithBalance<Erc20Token>,
-        token1: TokenWithBalance<Erc20Token>,
+        token0: TokenWithBalance,
+        token1: TokenWithBalance,
         blocksDelay: number,
         lastSwapBlock: number,
         lastSwapTimestamp: number,
@@ -49,7 +46,7 @@ export class Pair {
         vFee: number,
         maxReserveRatio: number,
         reserveRatio: number,
-        allowList: Array<Erc20Token>,
+        allowList: Array<string>,
         reserves: Array<PairReserve>
     ) {
         if (!isAddressValid(address)) {
@@ -71,7 +68,9 @@ export class Pair {
         }
         this.maxReserveRatio = maxReserveRatio;
         this.reserveRatio = reserveRatio;
-        this.allowList = allowList;
+        this.allowList = allowList.map((address) =>
+            ethers.utils.getAddress(address)
+        );
         this.reserves = reserves;
     }
 
@@ -79,15 +78,15 @@ export class Pair {
         return this.getCommonToken(pair) != null;
     }
 
-    getCommonToken(pair: Pair): Erc20Token | null {
-        return this.token0.token.eq(pair.token0.token)
-            ? this.token0.token
-            : this.token1.token.eq(pair.token0.token)
-              ? this.token1.token
-              : this.token0.token.eq(pair.token1.token)
-                ? this.token0.token
-                : this.token1.token.eq(pair.token1.token)
-                  ? this.token1.token
+    getCommonToken(pair: Pair): Token | null {
+        return this.token0.eq(pair.token0)
+            ? this.token0
+            : this.token1.eq(pair.token0)
+              ? this.token1
+              : this.token0.eq(pair.token1)
+                ? this.token0
+                : this.token1.eq(pair.token1)
+                  ? this.token1
                   : null;
     }
 
@@ -102,15 +101,15 @@ export class Pair {
     }
 
     hasTokenWithAddress(tokenAddress: string): boolean {
+        tokenAddress = ethers.utils.getAddress(tokenAddress);
         return (
-            this.token0.token.address.toLowerCase() === tokenAddress.toLowerCase() ||
-            this.token1.token.address.toLowerCase() === tokenAddress.toLowerCase()
+            this.token0.address === tokenAddress ||
+            this.token1.address === tokenAddress
         );
     }
 
     allowsTokenAsReserve(tokenAddress: string): boolean {
-        return !!this.allowList.find(
-            (token) => token.address.toLowerCase() === tokenAddress.toLowerCase()
-        );
+        tokenAddress = ethers.utils.getAddress(tokenAddress);
+        return this.allowList.some((token) => token === tokenAddress);
     }
 }

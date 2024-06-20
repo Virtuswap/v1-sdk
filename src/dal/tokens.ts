@@ -4,5 +4,8 @@ import { queryAllTokens, RawToken } from './utils/execute';
 
 export async function getAllTokens(chain: Chain): Promise<Array<Token>> {
     const tokens = await queryAllTokens(chain);
-    return tokens.map((token: RawToken) => new Token(token.id, token.decimals));
+    return tokens.map(
+        (token: RawToken) =>
+            new Token(chain, token.id, token.decimals, token.symbol, token.name)
+    );
 }

@@ -13,7 +13,6 @@ import {
     mockMetadataResponse,
     mockTokensPricesResponse,
 } from './mocks';
-import { Address } from '../src/entities/utils';
 
 jest.mock('../src/utils/pricing', () => {
     return {
@@ -156,7 +155,7 @@ describe('DAL: Pairs', () => {
             const pairs = await getAllPairs(chain as Chain);
             for (const [i, mockPair] of mockAllPairsResponse.entries()) {
                 expect(mockPair.id.toLowerCase()).toEqual(
-                    pairs[i].address.toString()
+                    pairs[i].address.toLowerCase()
                 );
                 expect(mockPair.balance0).toEqual(pairs[i].token0.balance);
                 expect(mockPair.balance1).toEqual(pairs[i].token1.balance);
@@ -181,14 +180,14 @@ describe('DAL: Pairs', () => {
                     i
                 ].whitelist.entries()) {
                     expect(mockWhitelistEntry.token.id.toLowerCase()).toEqual(
-                        pairs[i].allowList[j].toString()
+                        pairs[i].allowList[j].toLowerCase()
                     );
                 }
                 for (const [j, mockReserveEntry] of mockAllPairsResponse[
                     i
                 ].pairReserves.entries()) {
                     expect(mockReserveEntry.token.id.toLowerCase()).toEqual(
-                        pairs[i].reserves[j].reserveToken.address.toString()
+                        pairs[i].reserves[j].reserveToken.address.toLowerCase()
                     );
                     expect(mockReserveEntry.token.decimals).toEqual(
                         pairs[i].reserves[j].reserveToken.decimals.toString()
@@ -215,34 +214,34 @@ describe('DAL: Pairs', () => {
         for (const chain of Object.values(Chain)) {
             let pairs = await getTopPairsForToken(
                 chain as Chain,
-                new Address('0x4303d1d547fafa114f90b85356275c89465a60bf'),
+                '0x4303d1d547fafa114f90b85356275c89465a60bf',
                 0
             );
             expect(pairs).toEqual([]);
             pairs = await getTopPairsForToken(
                 chain as Chain,
-                new Address('0x4303d1d547fafa114f90b85356275c89465a60bf'),
+                '0x4303d1d547fafa114f90b85356275c89465a60bf',
                 1
             );
-            expect(pairs[0].address.toString()).toEqual(expectedPairs[1].id);
+            expect(pairs[0].address.toLowerCase()).toEqual(expectedPairs[1].id);
             pairs = await getTopPairsForToken(
                 chain as Chain,
-                new Address('0x4303d1d547fafa114f90b85356275c89465a60bf'),
+                '0x4303d1d547fafa114f90b85356275c89465a60bf',
                 2
             );
-            expect(pairs[0].address.toString()).toEqual(expectedPairs[1].id);
-            expect(pairs[1].address.toString()).toEqual(expectedPairs[0].id);
+            expect(pairs[0].address.toLowerCase()).toEqual(expectedPairs[1].id);
+            expect(pairs[1].address.toLowerCase()).toEqual(expectedPairs[0].id);
             pairs = await getTopPairsForToken(
                 chain as Chain,
-                new Address('0x4303d1d547fafa114f90b85356275c89465a60bf'),
+                '0x4303d1d547fafa114f90b85356275c89465a60bf',
                 10
             );
-            expect(pairs[0].address.toString()).toEqual(expectedPairs[1].id);
-            expect(pairs[1].address.toString()).toEqual(expectedPairs[0].id);
+            expect(pairs[0].address.toLowerCase()).toEqual(expectedPairs[1].id);
+            expect(pairs[1].address.toLowerCase()).toEqual(expectedPairs[0].id);
         }
         const pairs = await getTopPairsForToken(
             123456789 as Chain,
-            new Address('0x4303d1d547fafa114f90b85356275c89465a60bf'),
+            '0x4303d1d547fafa114f90b85356275c89465a60bf',
             10
         );
         expect(pairs.length).toEqual(0);
@@ -254,9 +253,7 @@ describe('DAL: Tokens', () => {
         for (const chain of Object.values(Chain)) {
             const tokens = await getAllTokens(chain as Chain);
             for (const [i, mockToken] of mockAllTokensResponse.entries()) {
-                expect(mockToken.id.toLowerCase()).toEqual(
-                    tokens[i].address.toString()
-                );
+                expect(mockToken.id).toEqual(tokens[i].address.toLowerCase());
                 expect(mockToken.decimals).toEqual(tokens[i].decimals);
             }
         }

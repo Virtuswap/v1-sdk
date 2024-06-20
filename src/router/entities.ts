@@ -2,7 +2,6 @@ import { ethers } from 'ethers';
 
 import { Token, TokenWithBalance } from '../entities/token';
 import { Chain } from '../entities/chain';
-import { Address } from '../entities/utils';
 
 export enum SwapType {
     DIRECT,
@@ -19,8 +18,8 @@ export type BaseRouteNode = {
 };
 
 export type ReserveRouteNode = BaseRouteNode & {
-    ikPair: Address;
-    jkPair: Address;
+    ikPair: string;
+    jkPair: string;
 };
 
 export type RouteNode = BaseRouteNode | ReserveRouteNode;

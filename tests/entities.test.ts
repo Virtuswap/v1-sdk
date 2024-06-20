@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { Erc20Token, TokenWithBalance } from '../src/entities/token';
+import { Token, TokenWithBalance } from '../src/entities/token';
 import { Pair, PairReserve } from '../src/entities/pair';
 import { Chain, chainInfo } from '../src/entities/chain';
 
@@ -27,7 +27,11 @@ describe('Chain parameters', () => {
 });
 
 describe('Token', () => {
-    const token = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x0123456789ABCDEF0123456789ABCDEF01234567', 18);
+    const token = new Token(
+        Chain.ARBITRUM_TESTNET,
+        '0x0123456789ABCDEF0123456789ABCDEF01234567',
+        18
+    );
 
     test('passing wrong address fails', async () => {
         const wrongAddresses = [
@@ -43,7 +47,9 @@ describe('Token', () => {
             '0a0000000000000000000000000000000000000000',
         ];
         for (const wrongAddress of wrongAddresses) {
-            expect(() => new Erc20Token(Chain.ARBITRUM_TESTNET, wrongAddress, 18)).toThrow(`address ${wrongAddress} is not valid`);
+            expect(
+                () => new Token(Chain.ARBITRUM_TESTNET, wrongAddress, 18)
+            ).toThrow(`address ${wrongAddress} is not valid`);
         }
     });
 
@@ -57,15 +63,11 @@ describe('Token', () => {
     });
 
     test('tokenWithBalance constructor fails if wrong balance is passed', async () => {
-        const wrongBalances = [
-            '.0',
-            '00.123',
-            '0,123',
-            '01.123',
-            '1.',
-        ];
+        const wrongBalances = ['00.123', '0,123', '01.123', '1.'];
         for (const wrongBalance of wrongBalances) {
-            expect(() => TokenWithBalance.fromDecimal(token, wrongBalance)).toThrow(`balance ${wrongBalance} is not valid`);
+            expect(() =>
+                TokenWithBalance.fromDecimal(token, wrongBalance)
+            ).toThrow(`balance ${wrongBalance} is not valid`);
         }
     });
 
@@ -96,8 +98,16 @@ describe('Token', () => {
 });
 
 describe('PairReserve', () => {
-    const token1 = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x0123456789ABCDEF0123456789ABCDEF01234567', 18);
-    const token2 = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x76543210FEDCBA9876543210FEDCBA9876543210', 6);
+    const token1 = new Token(
+        Chain.ARBITRUM_TESTNET,
+        '0x0123456789ABCDEF0123456789ABCDEF01234567',
+        18
+    );
+    const token2 = new Token(
+        Chain.ARBITRUM_TESTNET,
+        '0x76543210FEDCBA9876543210FEDCBA9876543210',
+        6
+    );
     const token1WithBalance = TokenWithBalance.fromDecimal(
         token1,
         '0.123456789123456789'
@@ -108,11 +118,15 @@ describe('PairReserve', () => {
         const emptyPairReserve = PairReserve.empty(token1, token2);
         expect(emptyPairReserve.baseToken.balanceBN.eq('0')).toBeTruthy;
         expect(emptyPairReserve.reserveToken.balanceBN.eq('0')).toBeTruthy;
-        expect(emptyPairReserve.baseToken.token.address).toEqual(
-            ethers.utils.getAddress('0x0123456789abcdef0123456789abcdef01234567')
+        expect(emptyPairReserve.baseToken.address).toEqual(
+            ethers.utils.getAddress(
+                '0x0123456789abcdef0123456789abcdef01234567'
+            )
         );
-        expect(emptyPairReserve.reserveToken.token.address).toEqual(
-            ethers.utils.getAddress('0x76543210fedcba9876543210fedcba9876543210')
+        expect(emptyPairReserve.reserveToken.address).toEqual(
+            ethers.utils.getAddress(
+                '0x76543210fedcba9876543210fedcba9876543210'
+            )
         );
 
         const pairReserve = new PairReserve(
@@ -122,20 +136,40 @@ describe('PairReserve', () => {
         expect(pairReserve.baseToken.balanceBN.eq('123456789123456789'))
             .toBeTruthy;
         expect(pairReserve.reserveToken.balanceBN.eq('123456')).toBeTruthy;
-        expect(pairReserve.baseToken.token.address).toEqual(
-            ethers.utils.getAddress('0x0123456789abcdef0123456789abcdef01234567')
+        expect(pairReserve.baseToken.address).toEqual(
+            ethers.utils.getAddress(
+                '0x0123456789abcdef0123456789abcdef01234567'
+            )
         );
-        expect(pairReserve.reserveToken.token.address).toEqual(
-            ethers.utils.getAddress('0x76543210fedcba9876543210fedcba9876543210')
+        expect(pairReserve.reserveToken.address).toEqual(
+            ethers.utils.getAddress(
+                '0x76543210fedcba9876543210fedcba9876543210'
+            )
         );
     });
 });
 
 describe('Pair', () => {
-    const token1 = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x0123456789ABCDEF0123456789ABCDEF01234567', 18);
-    const token2 = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x76543210FEDCBA9876543210FEDCBA9876543210', 6);
-    const token3 = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x1000000000000000000000000000000000000003', 8);
-    const token4 = new Erc20Token(Chain.ARBITRUM_TESTNET, '0x1000000000000000000000000000000000000004', 4);
+    const token1 = new Token(
+        Chain.ARBITRUM_TESTNET,
+        '0x0123456789ABCDEF0123456789ABCDEF01234567',
+        18
+    );
+    const token2 = new Token(
+        Chain.ARBITRUM_TESTNET,
+        '0x76543210FEDCBA9876543210FEDCBA9876543210',
+        6
+    );
+    const token3 = new Token(
+        Chain.ARBITRUM_TESTNET,
+        '0x1000000000000000000000000000000000000003',
+        8
+    );
+    const token4 = new Token(
+        Chain.ARBITRUM_TESTNET,
+        '0x1000000000000000000000000000000000000004',
+        4
+    );
     const pair1 = new Pair(
         '0xabacabadaba0123456789abacabadaba01234567',
         TokenWithBalance.fromDecimal(token1, '0.123456789123456789'),
@@ -147,7 +181,7 @@ describe('Pair', () => {
         997,
         2000,
         100,
-        [token1, token2, token3],
+        [token1.address, token2.address, token3.address],
         []
     );
     const pair2 = new Pair(
@@ -161,7 +195,7 @@ describe('Pair', () => {
         997,
         2000,
         100,
-        [token1],
+        [token1.address],
         []
     );
     const pair3 = new Pair(

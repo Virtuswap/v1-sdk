@@ -64,10 +64,12 @@ jest.mock('@ethersproject/contracts', () => {
 describe('Router', () => {
     test('getRoute for exact input works', async () => {
         const tokenOut = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x4303d1d547fafa114f90b85356275c89465a60bf',
             6
         );
         const tokenIn = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x0a9bc7c7721297da60e9510a1682fca347bf70e5',
             8
         );
@@ -117,10 +119,12 @@ describe('Router', () => {
 
     test('getRoute for exact output works', async () => {
         const tokenOut = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x4303d1d547fafa114f90b85356275c89465a60bf',
             6
         );
         const tokenIn = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x0a9bc7c7721297da60e9510a1682fca347bf70e5',
             8
         );
@@ -171,10 +175,12 @@ describe('Router', () => {
 
     test('getRoute for exact input works (direct)', async () => {
         const tokenOut = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x4303d1d547fafa114f90b85356275c89465a60bf',
             6
         );
         const tokenIn = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x220db2b860f817d43b6ee2733735274e51e7a491',
             6
         );
@@ -224,10 +230,12 @@ describe('Router', () => {
 
     test('getRoute for exact output works (direct)', async () => {
         const tokenOut = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x4303d1d547fafa114f90b85356275c89465a60bf',
             6
         );
         const tokenIn = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x220db2b860f817d43b6ee2733735274e51e7a491',
             6
         );
@@ -278,10 +286,12 @@ describe('Router', () => {
 
     test('Check for slippage change', async () => {
         const tokenIn = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x58e948c6e48d3EbC909332e22972101425109Bf4',
             18
         );
         const tokenOut = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x94b47ebE537C9ac7B37BDF7A5F68E7b6A1F16eAb',
             18
         );
@@ -309,10 +319,12 @@ describe('Router', () => {
 
     test('Check for two subsequent quotes', async () => {
         const tokenIn = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x58e948c6e48d3EbC909332e22972101425109Bf4',
             18
         );
         const tokenOut = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x94b47ebE537C9ac7B37BDF7A5F68E7b6A1F16eAb',
             18
         );
@@ -334,10 +346,12 @@ describe('Router', () => {
         );
 
         const tokenIn2 = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x4303d1d547fafa114f90b85356275c89465a60bf',
             6
         );
         const tokenOut2 = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x94b47ebe537c9ac7b37bdf7a5f68e7b6a1f16eab',
             18
         );
@@ -361,10 +375,12 @@ describe('Router', () => {
 
     test('generateMulticallData works #1', async () => {
         const tokenIn = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x4303d1d547fafa114f90b85356275c89465a60bf',
             6
         );
         const tokenOut = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x94b47ebe537c9ac7b37bdf7a5f68e7b6a1f16eab',
             18
         );
@@ -391,10 +407,12 @@ describe('Router', () => {
 
     test('generateMulticallData works #2', async () => {
         const tokenIn = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x4303d1d547fafa114f90b85356275c89465a60bf',
             6
         );
         const tokenOut = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x6C06aa45C300A55a810B4b36C73d861Cc8708833',
             18
         );
@@ -421,10 +439,12 @@ describe('Router', () => {
 
     test('generateMulticallData works #3', async () => {
         const tokenIn = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x58e948c6e48d3EbC909332e22972101425109Bf4',
             18
         );
         const tokenOut = new Token(
+            Chain.ARBITRUM_TESTNET,
             '0x94b47ebE537C9ac7B37BDF7A5F68E7b6A1F16eAb',
             18
         );
