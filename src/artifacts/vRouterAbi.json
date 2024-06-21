@@ -472,7 +472,7 @@
         "type": "bytes[]"
       }
     ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -502,6 +502,13 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "refundETH",
+    "outputs": [],
+    "stateMutability": "payable",
     "type": "function"
   },
   {

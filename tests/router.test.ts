@@ -468,6 +468,7 @@ describe('Router', () => {
             expectedMulticallData,
         ]);
     });
+    //TODO: add generateMulticallData for native -> ERC20 and ERC20 -> native cases
     test('executeMulticall works', async () => {
         const router = new Router();
         const signer = new ethers.Wallet(

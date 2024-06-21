@@ -168,6 +168,17 @@ export class Router {
         };
     }
 
+    private getRouterFunctionName(
+        isVirtual: boolean,
+        isExactInput: boolean,
+        isFromNative: boolean,
+        isToNative: boolean
+    ): string {
+        return `swap${isVirtual ? 'Reserve' : ''}${isExactInput ? 'Exact' : ''}${
+            isFromNative ? 'ETH' : 'Tokens'
+        }For${isExactInput ? '' : 'Exact'}${isToNative ? 'ETH' : 'Tokens'}`;
+    }
+
     async generateMulticallData(
         route: Route,
         signer: ethers.Signer
@@ -175,16 +186,20 @@ export class Router {
         const routerInterface = new ethers.utils.Interface(vRouterAbi);
         const futureTs = (await getBlockTimestamp(route.chain)) + 100000;
         const signerAddress = await signer.getAddress();
-        return route.steps.map((step) => {
+        const isFromNative = route.tokenIn.isNative;
+        const isToNative = route.tokenOut.isNative;
+        const multicallData = route.steps.map((step) => {
             let functionName = 'undefined';
             let params: any[] = [];
-            // TODO: add native tokens support
             switch (step.type) {
                 case SwapType.DIRECT:
                 case SwapType.TRIANGULAR:
-                    functionName = route.isExactInput
-                        ? 'swapExactTokensForTokens'
-                        : 'swapTokensForExactTokens';
+                    functionName = this.getRouterFunctionName(
+                        false,
+                        route.isExactInput,
+                        isFromNative,
+                        isToNative
+                    );
                     params = [
                         step.path.map((value) => value.address),
                         route.isExactInput ? step.amountInBn : step.amountOutBn,
@@ -194,9 +209,12 @@ export class Router {
                     ];
                     break;
                 case SwapType.VIRTUAL:
-                    functionName = route.isExactInput
-                        ? 'swapReserveExactTokensForTokens'
-                        : 'swapReserveTokensForExactTokens';
+                    functionName = this.getRouterFunctionName(
+                        true,
+                        route.isExactInput,
+                        isFromNative,
+                        isToNative
+                    );
                     params = [
                         step.path[2].address,
                         step.path[1].address,
@@ -210,19 +228,27 @@ export class Router {
             }
             return routerInterface.encodeFunctionData(functionName, params);
         });
+
+        if (isFromNative)
+            multicallData.push(routerInterface.encodeFunctionData('refundETH'));
+
+        return multicallData;
     }
 
     async executeMulticall(
         chain: Chain,
         multicallData: string[],
-        signer: ethers.Signer
+        signer: ethers.Signer,
+        value?: ethers.BigNumber
     ): Promise<TransactionResponse> {
         const routerContract = new ethers.Contract(
             chainInfo[chain].routerAddress,
             vRouterAbi,
             signer
         );
-        return await routerContract.multicall(multicallData);
+        return await routerContract.multicall(
+            ...(value ? [multicallData, { value }] : [multicallData])
+        );
     }
 
     private pairsCache: Array<Pair>;
