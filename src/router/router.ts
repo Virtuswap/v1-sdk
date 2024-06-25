@@ -246,9 +246,9 @@ export class Router {
             vRouterAbi,
             signer
         );
-        return await routerContract.multicall(
-            ...(value ? [multicallData, { value }] : [multicallData])
-        );
+        return await routerContract.multicall(multicallData, {
+            value: value ?? ethers.BigNumber.from('0'),
+        });
     }
 
     private pairsCache: Array<Pair>;
@@ -259,6 +259,23 @@ export class Router {
         tokenOut: Token,
         chain: Chain
     ): Promise<Array<SwapCandidate>> {
+        if (tokenIn.isNative)
+            tokenIn = new Token(
+                chain,
+                chainInfo[chain].weth9Address,
+                18,
+                tokenIn.symbol ? 'W' + tokenIn.symbol : undefined,
+                tokenIn.name ? 'Wrapped ' + tokenIn.name : undefined
+            );
+        if (tokenOut.isNative)
+            tokenOut = new Token(
+                chain,
+                chainInfo[chain].weth9Address,
+                18,
+                tokenOut.symbol ? 'W' + tokenOut.symbol : undefined,
+                tokenOut.name ? 'Wrapped ' + tokenOut.name : undefined
+            );
+
         return (await this.getVirtualSwapPairs(tokenIn, tokenOut, chain))
             .map(
                 ([jkPool, ikPool]) =>
