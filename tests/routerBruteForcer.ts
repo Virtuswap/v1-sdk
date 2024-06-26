@@ -24,6 +24,7 @@ export class Router {
         this.swapOptions = {
             isExactInput: swapOptions?.isExactInput ?? true,
             slippage: swapOptions?.slippage ?? 1000,
+            timeoutMs: swapOptions?.timeoutMs ?? 5000,
         };
         this.pairsCache = new Array();
         this.directedPairsCache = new Map();
@@ -38,11 +39,12 @@ export class Router {
         tokenOut: Token,
         amount: ethers.BigNumberish,
         chain: Chain,
-        swapOptions?: SwapOptions
+        swapOptions?: Partial<SwapOptions>
     ): Promise<Array<RouteNode>> {
         this.swapOptions = {
             isExactInput: swapOptions?.isExactInput ?? true,
             slippage: swapOptions?.slippage ?? 1000,
+            timeoutMs: swapOptions?.timeoutMs ?? 5000,
         };
         this.pairsCache = await getAllPairs(chain);
         this.directedPairsCache.clear();
