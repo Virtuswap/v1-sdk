@@ -1,6 +1,5 @@
 import { ethers } from 'ethers';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
-import cloneDeep from 'lodash/cloneDeep';
 
 import { DirectedPair } from './internal/directedPair';
 import {
@@ -23,10 +22,11 @@ import { getMultipleTokensPriceUsd } from '../utils/pricing';
 export class Router {
     swapOptions: SwapOptions;
 
-    constructor(swapOptions?: SwapOptions) {
+    constructor(swapOptions?: Partial<SwapOptions>) {
         this.swapOptions = {
             isExactInput: swapOptions?.isExactInput ?? true,
             slippage: swapOptions?.slippage ?? 1000,
+            timeoutMs: swapOptions?.timeoutMs ?? 5000,
         };
         this.pairsCache = new Array();
         this.directedPairsCache = new Map();
@@ -37,11 +37,13 @@ export class Router {
         tokenOut: Token,
         amount: ethers.BigNumberish,
         chain: Chain,
-        swapOptions?: SwapOptions
+        swapOptions?: Partial<SwapOptions>
     ): Promise<Route> {
-        this.swapOptions = {
-            isExactInput: swapOptions?.isExactInput ?? true,
-            slippage: swapOptions?.slippage ?? 1000,
+        const t0 = performance.now();
+        let localSwapOptions: SwapOptions = {
+            isExactInput: swapOptions?.isExactInput ?? this.swapOptions.isExactInput,
+            slippage: swapOptions?.slippage ?? this.swapOptions.slippage,
+            timeoutMs: swapOptions?.timeoutMs ?? this.swapOptions.timeoutMs,
         };
         this.pairsCache = await getAllPairs(chain);
         this.directedPairsCache.clear();
@@ -59,9 +61,9 @@ export class Router {
         let optimalAmount = this.calculateRouteAmounts(
             candidates,
             optimalRoute,
-            this.swapOptions.isExactInput!
+            localSwapOptions.isExactInput
         ).reduce((current, sum) => sum.add(current), ethers.BigNumber.from(0));
-        if (!this.swapOptions.isExactInput!)
+        if (!localSwapOptions.isExactInput)
             optimalAmount = this.negateBigNumber(optimalAmount);
 
         let step = amountBN;
@@ -79,12 +81,12 @@ export class Router {
                         let nextAmount = this.calculateRouteAmounts(
                             candidates,
                             optimalRoute,
-                            this.swapOptions.isExactInput!
+                            localSwapOptions.isExactInput
                         ).reduce(
                             (current, sum) => sum.add(current),
                             ethers.BigNumber.from(0)
                         );
-                        if (!this.swapOptions.isExactInput!)
+                        if (!localSwapOptions.isExactInput)
                             nextAmount = this.negateBigNumber(nextAmount);
                         if (nextAmount.gt(nextOptimalAmount)) {
                             nextOptimalAmount = nextAmount;
@@ -103,14 +105,16 @@ export class Router {
             } else {
                 step = step.div(2);
             }
+            const t1 = performance.now();
+            if (t1 - t0 >= localSwapOptions.timeoutMs) break;
         }
         let amounts = this.calculateRouteAmounts(
             candidates,
             optimalRoute,
-            this.swapOptions.isExactInput!
+            localSwapOptions.isExactInput
         );
         const slippageThresholdAmounts = amounts.map((amount) =>
-            amount.sub(amount.div(this.swapOptions.slippage!))
+            amount.sub(amount.div(localSwapOptions.slippage))
         );
         const slippageThresholdAmountsSum = slippageThresholdAmounts.reduce(
             (sum, prev) => sum.add(prev),
@@ -118,7 +122,7 @@ export class Router {
         );
         const tokenOutWithBalance = TokenWithBalance.fromBigNumber(
             tokenOut,
-            this.swapOptions.isExactInput
+            localSwapOptions.isExactInput
                 ? amounts.reduce(
                       (sum, prev) => sum.add(prev),
                       ethers.BigNumber.from('0')
@@ -127,7 +131,7 @@ export class Router {
         );
         const tokenInWithBalance = TokenWithBalance.fromBigNumber(
             tokenIn,
-            this.swapOptions.isExactInput
+            localSwapOptions.isExactInput
                 ? amountBN
                 : amounts.reduce(
                       (sum, prev) => sum.add(prev),
@@ -140,12 +144,12 @@ export class Router {
                 tokenOut.address,
             ]);
         return {
-            isExactInput: this.swapOptions.isExactInput!,
+            isExactInput: localSwapOptions.isExactInput,
             chain,
             tokenIn: tokenInWithBalance,
             tokenOut: tokenOutWithBalance,
             slippageThresholdAmount: TokenWithBalance.fromBigNumber(
-                this.swapOptions.isExactInput ? tokenOut : tokenIn,
+                localSwapOptions.isExactInput ? tokenOut : tokenIn,
                 slippageThresholdAmountsSum
             ),
             amountInUsd:
@@ -155,10 +159,10 @@ export class Router {
             steps: candidates
                 .map((candidate, index) =>
                     candidate.routeNode(
-                        this.swapOptions.isExactInput!
+                        localSwapOptions.isExactInput
                             ? optimalRoute[index]
                             : amounts[index],
-                        this.swapOptions.isExactInput!
+                        localSwapOptions.isExactInput
                             ? amounts[index]
                             : optimalRoute[index],
                         slippageThresholdAmounts[index]
@@ -473,21 +477,24 @@ export class Router {
         route: Array<ethers.BigNumber>,
         isExactInput: boolean
     ): Array<ethers.BigNumber> {
-        let localCandidates = cloneDeep(candidates);
         let amounts = new Array(candidates.length).fill(
             ethers.BigNumber.from(0)
         );
         try {
-            for (let k = 0; k < localCandidates.length; ++k) {
+            for (let k = 0; k < candidates.length; ++k) {
                 if (!route[k].isZero()) {
                     amounts[k] = isExactInput
-                        ? localCandidates[k].getAmountOut(route[k])
-                        : localCandidates[k].getAmountIn(route[k]);
-                    localCandidates[k].emulateTrade(route[k], isExactInput);
+                        ? candidates[k].getAmountOut(route[k])
+                        : candidates[k].getAmountIn(route[k]);
+                    candidates[k].emulateTrade(route[k], isExactInput);
                 }
             }
         } catch (e) {
             amounts = amounts.fill(ethers.BigNumber.from(0));
+        } finally {
+            for (let k = 0; k < candidates.length; ++k) {
+                candidates[k].revert();
+            }
         }
         return amounts;
     }

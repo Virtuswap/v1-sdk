@@ -19,6 +19,8 @@ export interface SwapCandidate {
 
     emulateTrade(amount: ethers.BigNumber, isExactInput: boolean): void;
 
+    revert(): void;
+
     routeNode(
         amountIn: ethers.BigNumber,
         amountOut: ethers.BigNumber,
@@ -45,6 +47,10 @@ export class DirectCandidate implements SwapCandidate {
         isExactInput
             ? this.pair.swapExactInput(amount)
             : this.pair.swapExactOutput(amount);
+    }
+
+    revert(): void {
+        this.pair.revert();
     }
 
     routeNode(
@@ -87,6 +93,11 @@ export class TriangularCandidate implements SwapCandidate {
                   this.pair.swapExactInput(amount)
               )
             : this.pair.swapExactOutput(this.pair.swapExactOutput(amount));
+    }
+
+    revert(): void {
+        this.pair.revert();
+        this.secondaryPair.revert();
     }
 
     routeNode(
@@ -148,6 +159,11 @@ export class ReserveCandidate implements SwapCandidate {
             ),
             this.virtualPair
         );
+    }
+
+    revert(): void {
+        this.pair.revert();
+        this.referencePair.revert();
     }
 
     routeNode(

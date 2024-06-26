@@ -7,7 +7,6 @@
         "tsup": "^8.0.2"
     },
     "dependencies": {
-        "@types/lodash.clonedeep": "^4.5.9",
         "axios": "^1.6.8",
         "ethers": "^5.7.2"
     },
@@ -19,7 +18,7 @@
         "prepublishOnly": "npm run build"
     },
     "name": "@virtuswap/v1-sdk",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "description": "VirtuSwap SDK",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",

@@ -36,6 +36,7 @@ export type Route = {
 };
 
 export type SwapOptions = {
-    slippage?: number;
-    isExactInput?: boolean;
+    slippage: number;
+    isExactInput: boolean;
+    timeoutMs: number;
 };
