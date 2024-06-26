@@ -61,11 +61,6 @@ export class Pair {
         this.lastSwapTimestamp = lastSwapTimestamp;
         this.fee = fee;
         this.vFee = vFee;
-        if (reserveRatio > maxReserveRatio) {
-            throw new Error(
-                'reserveRatio ratio is greater than maxReserveRatio'
-            );
-        }
         this.maxReserveRatio = maxReserveRatio;
         this.reserveRatio = reserveRatio;
         this.allowList = allowList.map((address) =>
