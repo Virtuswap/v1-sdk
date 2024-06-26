@@ -49,6 +49,7 @@ export class Token {
     get isNative(): boolean {
         return (
             this.address === ethers.constants.AddressZero ||
+            this.address === '0x0000000000000000000000000000000000001010' ||
             this.address === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
         );
     }
