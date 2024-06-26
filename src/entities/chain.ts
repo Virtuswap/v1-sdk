@@ -20,13 +20,13 @@ export const chainInfo: ChainInfo = {
     /*** MAINNET ***/
     // POLYGON
     137: {
-        routerAddress: '0x3E3d15ea98429E546f30215AEfBB69A4244A8Ea9', //TODO: deploy new router from https://github.com/Virtuswap/v1-core/tree/multicall
+        routerAddress: '0xe724A2195320f74Ff36075a26F12828A5920Af68',
         weth9Address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
         useBlockTimestamp: false,
     },
     // ARBITRUM
     42161: {
-        routerAddress: '0xB455da5a32E7E374dB6d1eDfdb86C167DD983f40', //TODO: deploy new router from https://github.com/Virtuswap/v1-core/tree/multicall
+        routerAddress: '0x8917BF335BF484da1CfEAcdE4A057A104372B76c',
         weth9Address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
         useBlockTimestamp: true,
     },
