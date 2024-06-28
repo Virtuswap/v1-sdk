@@ -147,7 +147,9 @@ export class Router {
             localSwapOptions.isExactInput
         );
         const slippageThresholdAmounts = amounts.map((amount) =>
-            amount.sub(amount.div(localSwapOptions.slippage))
+            localSwapOptions.isExactInput
+                ? amount.sub(amount.div(localSwapOptions.slippage))
+                : amount.add(amount.div(localSwapOptions.slippage))
         );
         const slippageThresholdAmountsSum = slippageThresholdAmounts.reduce(
             (sum, prev) => sum.add(prev),
