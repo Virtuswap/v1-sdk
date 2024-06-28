@@ -523,7 +523,9 @@ export class Router {
             }
         } catch (e) {
             amounts = amounts.fill(
-                ethers.BigNumber.from('99999999999999999999999999999999')
+                ethers.BigNumber.from(
+                    isExactInput ? '0' : '99999999999999999999999999999999'
+                )
             );
         } finally {
             for (let k = 0; k < candidates.length; ++k) {
