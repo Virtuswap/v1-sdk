@@ -218,11 +218,10 @@ export class Router {
 
     async generateMulticallData(
         route: Route,
-        signer: ethers.Signer
+        signerAddress: string
     ): Promise<string[]> {
         const routerInterface = new ethers.utils.Interface(vRouterAbi);
         const futureTs = (await getBlockTimestamp(route.chain)) + 100000;
-        const signerAddress = await signer.getAddress();
         const isFromNative = route.tokenIn.isNative;
         const isToNative = route.tokenOut.isNative;
         const multicallData = route.steps.map((step) => {
