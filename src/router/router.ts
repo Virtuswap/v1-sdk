@@ -173,8 +173,12 @@ export class Router {
         );
         const [tokenInPriceUsd, tokenOutPriceUsd] =
             await getMultipleTokensPriceUsd(chain, [
-                tokenIn.address,
-                tokenOut.address,
+                tokenIn.isNative
+                    ? chainInfo[chain].weth9Address
+                    : tokenIn.address,
+                tokenOut.isNative
+                    ? chainInfo[chain].weth9Address
+                    : tokenOut.address,
             ]);
         return {
             isExactInput: localSwapOptions.isExactInput,
