@@ -13,6 +13,8 @@ import {
 export interface SwapCandidate {
     readonly pair: DirectedPair;
 
+    getMaxAmountOut(): ethers.BigNumber;
+
     getAmountOut(amountIn: ethers.BigNumber): ethers.BigNumber;
 
     getAmountIn(amountIn: ethers.BigNumber): ethers.BigNumber;
@@ -33,6 +35,11 @@ export class DirectCandidate implements SwapCandidate {
 
     constructor(directedPair: DirectedPair) {
         this.pair = directedPair;
+    }
+
+    getMaxAmountOut(): ethers.BigNumber {
+        const maxAmountOut = this.pair.token1.balanceBN;
+        return maxAmountOut.isZero() ? maxAmountOut : maxAmountOut.sub(1);
     }
 
     getAmountOut(amountIn: ethers.BigNumber): ethers.BigNumber {
@@ -75,6 +82,11 @@ export class TriangularCandidate implements SwapCandidate {
     constructor(pair0: DirectedPair, pair1: DirectedPair) {
         this.pair = pair0;
         this.secondaryPair = pair1;
+    }
+
+    getMaxAmountOut(): ethers.BigNumber {
+        const maxAmountOut = this.secondaryPair.token1.balanceBN;
+        return maxAmountOut.isZero() ? maxAmountOut : maxAmountOut.sub(1);
     }
 
     getAmountOut(amountIn: ethers.BigNumber): ethers.BigNumber {
@@ -126,6 +138,17 @@ export class ReserveCandidate implements SwapCandidate {
     constructor(jkPair: DirectedPair, ikPair: DirectedPair) {
         this.referencePair = ikPair;
         this.pair = jkPair;
+    }
+
+    getMaxAmountOut(): ethers.BigNumber {
+        let l = ethers.BigNumber.from(0);
+        let r = this.virtualPair.token1.balanceBN.sub(1);
+        while (r.sub(l).gt(1)) {
+            const mid = l.add(r).div(2);
+            if (!this.getAmountIn(mid).isZero()) l = mid;
+            else r = mid;
+        }
+        return l;
     }
 
     getAmountOut(amountIn: ethers.BigNumber): ethers.BigNumber {

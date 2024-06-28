@@ -41,7 +41,8 @@ export class Router {
     ): Promise<Route> {
         const t0 = performance.now();
         let localSwapOptions: SwapOptions = {
-            isExactInput: swapOptions?.isExactInput ?? this.swapOptions.isExactInput,
+            isExactInput:
+                swapOptions?.isExactInput ?? this.swapOptions.isExactInput,
             slippage: swapOptions?.slippage ?? this.swapOptions.slippage,
             timeoutMs: swapOptions?.timeoutMs ?? this.swapOptions.timeoutMs,
         };
@@ -57,7 +58,33 @@ export class Router {
         let optimalRoute = new Array<ethers.BigNumber>(candidates.length).fill(
             ethers.BigNumber.from(0)
         );
-        optimalRoute[optimalRoute.length - 1] = amountBN;
+        if (!localSwapOptions.isExactInput) {
+            let localAmountBN = ethers.BigNumber.from(amountBN);
+            for (
+                let i = candidates.length - 1;
+                i >= 0 && !localAmountBN.isZero();
+                --i
+            ) {
+                const candidateMaxAmountOut = candidates[i].getMaxAmountOut();
+                optimalRoute[i] = localAmountBN.gt(candidateMaxAmountOut)
+                    ? candidateMaxAmountOut
+                    : localAmountBN;
+                localAmountBN = localAmountBN.sub(optimalRoute[i]);
+                if (!optimalRoute[i].isZero())
+                    candidates[i].emulateTrade(
+                        optimalRoute[i],
+                        localSwapOptions.isExactInput
+                    );
+            }
+            for (let i = candidates.length - 1; i >= 0; --i) {
+                if (!optimalRoute[i].isZero()) candidates[i].revert();
+            }
+            if (!localAmountBN.isZero()) {
+                optimalRoute.fill(ethers.BigNumber.from(0));
+            }
+        } else {
+            optimalRoute[optimalRoute.length - 1] = amountBN;
+        }
         let optimalAmount = this.calculateRouteAmounts(
             candidates,
             optimalRoute,
@@ -75,27 +102,33 @@ export class Router {
             for (let i = 0; i < candidates.length; ++i) {
                 if (optimalRoute[i].lt(step)) continue;
                 for (let j = 0; j < candidates.length; ++j) {
-                    if (i != j) {
-                        optimalRoute[i] = optimalRoute[i].sub(step);
-                        optimalRoute[j] = optimalRoute[j].add(step);
-                        let nextAmount = this.calculateRouteAmounts(
-                            candidates,
-                            optimalRoute,
-                            localSwapOptions.isExactInput
-                        ).reduce(
-                            (current, sum) => sum.add(current),
-                            ethers.BigNumber.from(0)
-                        );
-                        if (!localSwapOptions.isExactInput)
-                            nextAmount = this.negateBigNumber(nextAmount);
-                        if (nextAmount.gt(nextOptimalAmount)) {
-                            nextOptimalAmount = nextAmount;
-                            from = i;
-                            to = j;
-                        }
-                        optimalRoute[i] = optimalRoute[i].add(step);
-                        optimalRoute[j] = optimalRoute[j].sub(step);
+                    if (
+                        i == j ||
+                        (!localSwapOptions.isExactInput &&
+                            optimalRoute[j]
+                                .add(step)
+                                .gt(candidates[j].getMaxAmountOut()))
+                    )
+                        continue;
+                    optimalRoute[i] = optimalRoute[i].sub(step);
+                    optimalRoute[j] = optimalRoute[j].add(step);
+                    let nextAmount = this.calculateRouteAmounts(
+                        candidates,
+                        optimalRoute,
+                        localSwapOptions.isExactInput
+                    ).reduce(
+                        (current, sum) => sum.add(current),
+                        ethers.BigNumber.from(0)
+                    );
+                    if (!localSwapOptions.isExactInput)
+                        nextAmount = this.negateBigNumber(nextAmount);
+                    if (nextAmount.gt(nextOptimalAmount)) {
+                        nextOptimalAmount = nextAmount;
+                        from = i;
+                        to = j;
                     }
+                    optimalRoute[i] = optimalRoute[i].add(step);
+                    optimalRoute[j] = optimalRoute[j].sub(step);
                 }
             }
             if (nextOptimalAmount.gt(optimalAmount)) {
@@ -490,7 +523,9 @@ export class Router {
                 }
             }
         } catch (e) {
-            amounts = amounts.fill(ethers.BigNumber.from(0));
+            amounts = amounts.fill(
+                ethers.BigNumber.from('99999999999999999999999999999999')
+            );
         } finally {
             for (let k = 0; k < candidates.length; ++k) {
                 candidates[k].revert();
