@@ -85,7 +85,13 @@ export class TriangularCandidate implements SwapCandidate {
     }
 
     getMaxAmountOut(): ethers.BigNumber {
-        const maxAmountOut = this.secondaryPair.token1.balanceBN;
+        const maxAmountOutSecPair = this.secondaryPair.token1.balanceBN;
+        const maxAmountOutPrimPair = this.pair.token1.balanceBN;
+
+        const maxAmountOut = maxAmountOutSecPair.gt(maxAmountOutPrimPair)
+            ? maxAmountOutPrimPair
+            : maxAmountOutSecPair;
+
         return maxAmountOut.isZero() ? maxAmountOut : maxAmountOut.sub(1);
     }
 
@@ -104,7 +110,9 @@ export class TriangularCandidate implements SwapCandidate {
             ? this.secondaryPair.swapExactInput(
                   this.pair.swapExactInput(amount)
               )
-            : this.pair.swapExactOutput(this.pair.swapExactOutput(amount));
+            : this.pair.swapExactOutput(
+                  this.secondaryPair.swapExactOutput(amount)
+              );
     }
 
     revert(): void {
