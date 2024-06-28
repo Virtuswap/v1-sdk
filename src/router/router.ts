@@ -518,7 +518,7 @@ export class Router {
                     amounts[k] = isExactInput
                         ? candidates[k].getAmountOut(route[k])
                         : candidates[k].getAmountIn(route[k]);
-                    if (amounts[k].lt(0)) throw 'Swap is not possible';
+                    if (amounts[k].lte(0)) throw 'Swap is not possible';
                     candidates[k].emulateTrade(route[k], isExactInput);
                 }
             }
