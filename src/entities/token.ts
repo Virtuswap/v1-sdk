@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import { isAddressValid, isDecimalBalanceValid } from '../utils/validations';
 import { Chain } from './chain';
 
-type TokenParams = {
+export type TokenParams = {
     chainId: number;
     address: string;
     decimals: number;

@@ -1,10 +1,16 @@
-export enum Chain {
+export enum MainnetChain {
     POLYGON_MAINNET = 137,
     ARBITRUM_MAINNET = 42161,
+}
 
+export enum TestnetChain {
     POLYGON_TESTNET = 80002,
     ARBITRUM_TESTNET = 421614,
 }
+
+export type Chain = MainnetChain | TestnetChain;
+
+export const Chain = { ...MainnetChain, ...TestnetChain } as const;
 
 export interface ChainInfoItem {
     routerAddress: string;
