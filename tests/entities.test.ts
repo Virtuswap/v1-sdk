@@ -19,10 +19,10 @@ describe('Chain parameters', () => {
     });
 
     test('routerAddress is set', async () => {
-        expect(chainInfo[Chain.ARBITRUM_TESTNET].routerAddress).toBeDefined;
-        expect(chainInfo[Chain.ARBITRUM_MAINNET].routerAddress).toBeDefined;
-        expect(chainInfo[Chain.POLYGON_TESTNET].routerAddress).toBeDefined;
-        expect(chainInfo[Chain.POLYGON_TESTNET].routerAddress).toBeDefined;
+        expect(chainInfo[Chain.ARBITRUM_TESTNET].router2Address).toBeDefined;
+        expect(chainInfo[Chain.ARBITRUM_MAINNET].router2Address).toBeDefined;
+        expect(chainInfo[Chain.POLYGON_TESTNET].router2Address).toBeDefined;
+        expect(chainInfo[Chain.POLYGON_TESTNET].router2Address).toBeDefined;
     });
 });
 

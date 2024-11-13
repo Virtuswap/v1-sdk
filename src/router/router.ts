@@ -5,9 +5,11 @@ import { SwapType, ReserveRouteNode, Route, SwapOptions } from './entities';
 
 import { getRoute } from '../utils';
 import { Chain, chainInfo, Token } from '../entities';
-import vRouterAbi from '../artifacts/vRouterAbi.json';
+import vRouter2Abi from '../artifacts/vRouter2Abi.json';
+import vRouter3Abi from '../artifacts/vRouter3Abi.json';
 
-const routerInterface = new ethers.utils.Interface(vRouterAbi);
+const routerV2Interface = new ethers.utils.Interface(vRouter2Abi);
+const routerV3Interface = new ethers.utils.Interface(vRouter3Abi);
 
 export class Router {
     swapOptions: SwapOptions;
@@ -48,7 +50,7 @@ export class Router {
         );
     }
 
-    private getRouterFunctionName(
+    private getRouterV2FunctionName(
         isVirtual: boolean,
         isExactInput: boolean,
         isFromNative: boolean,
@@ -59,11 +61,26 @@ export class Router {
         }For${isExactInput ? '' : 'Exact'}${isToNative ? 'ETH' : 'Tokens'}`;
     }
 
-    async generateMulticallData(
+    private getRouterV3FunctionName(
+        isExactInput: boolean,
+        isFromNative: boolean,
+        isToNative: boolean
+    ): string {
+        return `multiSwap${isExactInput ? 'Exact' : ''}${
+            isFromNative ? 'ETH' : 'Tokens'
+        }For${isExactInput ? '' : 'Exact'}${isToNative ? 'ETH' : 'Tokens'}`;
+    }
+
+    generateMulticallDataV2(
         route: Route,
         userAddress: string,
         maxExecutionTime?: number
-    ): Promise<string[]> {
+    ): string[] {
+        const routerAddress = chainInfo[route.chain].router2Address;
+
+        if (!routerAddress)
+            throw new Error(`Cannot find routerV2 for chain ${route.chain}`);
+
         const deadline =
             Math.floor(Date.now() / 1000) + (maxExecutionTime ?? 100000);
         const isFromNative = route.tokenIn.isNative;
@@ -74,7 +91,7 @@ export class Router {
             switch (step.type) {
                 case SwapType.DIRECT:
                 case SwapType.TRIANGULAR:
-                    functionName = this.getRouterFunctionName(
+                    functionName = this.getRouterV2FunctionName(
                         false,
                         route.isExactInput,
                         isFromNative,
@@ -89,7 +106,7 @@ export class Router {
                     ];
                     break;
                 case SwapType.VIRTUAL:
-                    functionName = this.getRouterFunctionName(
+                    functionName = this.getRouterV2FunctionName(
                         true,
                         route.isExactInput,
                         isFromNative,
@@ -106,34 +123,139 @@ export class Router {
                     ];
                     break;
             }
-            return routerInterface.encodeFunctionData(functionName, params);
+            return routerV2Interface.encodeFunctionData(functionName, params);
         });
 
         if (isFromNative)
-            multicallData.push(routerInterface.encodeFunctionData('refundETH'));
+            multicallData.push(
+                routerV2Interface.encodeFunctionData('refundETH')
+            );
 
         return multicallData;
     }
 
-    async generateTransactionData(
+    private getRealRouteV3Data(
+        transitStartIndex: number,
+        transitLength: number,
+        amount: ethers.BigNumber
+    ) {
+        return ethers.BigNumber.from(transitStartIndex)
+            .shl(192)
+            .or(ethers.BigNumber.from(transitLength).shl(128))
+            .or(amount);
+    }
+
+    private getVirtualRouteV3Data(
+        transitStartIndex: number,
+        amount: ethers.BigNumber
+    ) {
+        return ethers.BigNumber.from(transitStartIndex)
+            .shl(192)
+            .or(ethers.BigNumber.from(1).shl(64).sub(1).shl(128))
+            .or(amount);
+    }
+
+    generateMultiSwapDataV3(
         route: Route,
         userAddress: string,
         maxExecutionTime?: number
-    ): Promise<ethers.providers.TransactionRequest> {
-        const calldata = await this.generateMulticallData(
+    ): string {
+        const routerAddress = chainInfo[route.chain].router3Address;
+
+        if (!routerAddress)
+            throw new Error(`Cannot find routerV3 for chain ${route.chain}`);
+
+        const deadline = ethers.BigNumber.from(
+            Math.floor(Date.now() / 1000) + (maxExecutionTime ?? 100000)
+        );
+        const isFromNative = route.tokenIn.isNative;
+        const isToNative = route.tokenOut.isNative;
+
+        const functionName = this.getRouterV3FunctionName(
+            route.isExactInput,
+            isFromNative,
+            isToNative
+        );
+
+        const routeData: ethers.BigNumber[] = [];
+        const transitTokens: string[] = [];
+
+        for (const routeStep of route.steps) {
+            const amount = route.isExactInput
+                ? routeStep.amountInBn
+                : routeStep.amountOutBn;
+            switch (routeStep.type) {
+                case SwapType.DIRECT:
+                    routeData.push(this.getRealRouteV3Data(0, 0, amount));
+                    break;
+                case SwapType.TRIANGULAR:
+                    const transitTokenAddress = routeStep.path[1].address;
+                    let transitIndex =
+                        transitTokens.indexOf(transitTokenAddress);
+                    if (transitIndex < 0) {
+                        transitIndex =
+                            transitTokens.push(transitTokenAddress) - 1;
+                    }
+                    routeData.push(
+                        this.getRealRouteV3Data(transitIndex, 1, amount)
+                    );
+                    break;
+                case SwapType.VIRTUAL:
+                    const commonTokenAddress = routeStep.path[1].address;
+                    let commonIndex = transitTokens.indexOf(commonTokenAddress);
+                    if (commonIndex < 0) {
+                        commonIndex =
+                            transitTokens.push(commonTokenAddress) - 1;
+                    }
+                    routeData.push(
+                        this.getVirtualRouteV3Data(commonIndex, amount)
+                    );
+                    break;
+                default:
+                    const stepTransitTokens = routeStep.path
+                        .slice(1, routeStep.path.length - 1)
+                        .map((token) => token.address);
+                    const startIndex = transitTokens.length;
+                    transitTokens.push(...stepTransitTokens);
+                    routeData.push(
+                        this.getRealRouteV3Data(
+                            startIndex,
+                            stepTransitTokens.length,
+                            amount
+                        )
+                    );
+                    break;
+            }
+        }
+
+        const params: any[] = [deadline, routeData, transitTokens];
+        if (!isFromNative) params.push(route.tokenIn.address);
+        if (!isToNative) params.push(route.tokenOut.address);
+        params.push(userAddress);
+        params.push(route.slippageThresholdAmount.balanceBN);
+
+        return routerV3Interface.encodeFunctionData(functionName, params);
+    }
+
+    generateTransactionDataV2(
+        route: Route,
+        userAddress: string,
+        maxExecutionTime?: number
+    ): ethers.providers.TransactionRequest {
+        const calldata = this.generateMulticallDataV2(
             route,
             userAddress,
             maxExecutionTime
         );
 
-        const data = routerInterface.encodeFunctionData('multicall', [
+        const data = routerV2Interface.encodeFunctionData('multicall', [
             calldata,
         ]);
 
         return {
             chainId: route.chain,
             from: userAddress,
-            to: chainInfo[route.chain].routerAddress,
+            to: chainInfo[route.chain].router2Address!,
             data,
             value: route.tokenIn.isNative
                 ? route.isExactInput
@@ -143,18 +265,66 @@ export class Router {
         };
     }
 
-    async executeMulticall(
+    generateTransactionDataV3(
+        route: Route,
+        userAddress: string,
+        maxExecutionTime?: number
+    ): ethers.providers.TransactionRequest {
+        const data = this.generateMultiSwapDataV3(
+            route,
+            userAddress,
+            maxExecutionTime
+        );
+
+        return {
+            chainId: route.chain,
+            from: userAddress,
+            to: chainInfo[route.chain].router3Address!,
+            data,
+            value: route.tokenIn.isNative
+                ? route.isExactInput
+                    ? route.tokenIn.balanceBN
+                    : route.slippageThresholdAmount.balanceBN
+                : '0',
+        };
+    }
+
+    async executeMulticallV2(
         chain: Chain,
         multicallData: string[],
         signer: ethers.Signer,
         value?: ethers.BigNumber
     ): Promise<TransactionResponse> {
+        const routerAddress = chainInfo[chain].router2Address;
+
+        if (!routerAddress)
+            throw new Error(`Cannot find routerV2 for chain ${chain}`);
+
         const routerContract = new ethers.Contract(
-            chainInfo[chain].routerAddress,
-            vRouterAbi,
+            routerAddress,
+            vRouter2Abi,
             signer
         );
         return await routerContract.multicall(multicallData, {
+            value: value ?? ethers.BigNumber.from('0'),
+        });
+    }
+
+    async executeMultiSwapV3(
+        chain: Chain,
+        multiswapData: string,
+        signer: ethers.Signer,
+        value?: ethers.BigNumber
+    ): Promise<TransactionResponse> {
+        const routerAddress = chainInfo[chain].router3Address;
+
+        if (!routerAddress)
+            throw new Error(`Cannot find routerV3 for chain ${chain}`);
+
+        return await signer.sendTransaction({
+            chainId: chain,
+            to: routerAddress,
+            data: multiswapData,
             value: value ?? ethers.BigNumber.from('0'),
         });
     }
