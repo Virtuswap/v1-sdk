@@ -14,7 +14,7 @@ export const Chain = { ...MainnetChain, ...TestnetChain } as const;
 
 export interface ChainInfoItem {
     router2Address: string;
-    router3Address?: string;
+    router3Address: string;
     weth9Address: string;
     useBlockTimestamp: boolean;
 }
@@ -28,12 +28,14 @@ export const chainInfo: ChainInfo = {
     // POLYGON
     137: {
         router2Address: '0xe724A2195320f74Ff36075a26F12828A5920Af68',
+        router3Address: '0x71AFe81B4f4c3Ac191F74A2a0C5e284Efb0F20a4',
         weth9Address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
         useBlockTimestamp: false,
     },
     // ARBITRUM
     42161: {
         router2Address: '0x8917BF335BF484da1CfEAcdE4A057A104372B76c',
+        router3Address: '0x07047dC59e8958227B61d112915B889ED696c024',
         weth9Address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
         useBlockTimestamp: true,
     },
@@ -41,6 +43,7 @@ export const chainInfo: ChainInfo = {
     // POLYGON
     80002: {
         router2Address: '0xc2Eddfd8fb1fb918C621d81F22115B0161e9d154', //TODO: deploy new router from https://github.com/Virtuswap/v1-core/tree/multicall
+        router3Address: '', //TODO
         weth9Address: '', //TODO
         useBlockTimestamp: false,
     },

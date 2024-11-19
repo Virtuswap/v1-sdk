@@ -18,11 +18,18 @@ describe('Chain parameters', () => {
         expect(chainInfo[Chain.POLYGON_TESTNET].useBlockTimestamp).toBeFalsy;
     });
 
-    test('routerAddress is set', async () => {
+    test('router2Address is set', async () => {
         expect(chainInfo[Chain.ARBITRUM_TESTNET].router2Address).toBeDefined;
         expect(chainInfo[Chain.ARBITRUM_MAINNET].router2Address).toBeDefined;
         expect(chainInfo[Chain.POLYGON_TESTNET].router2Address).toBeDefined;
         expect(chainInfo[Chain.POLYGON_TESTNET].router2Address).toBeDefined;
+    });
+
+    test('router3Address is set', async () => {
+        expect(chainInfo[Chain.ARBITRUM_TESTNET].router3Address).toBeDefined;
+        expect(chainInfo[Chain.ARBITRUM_MAINNET].router3Address).toBeDefined;
+        expect(chainInfo[Chain.POLYGON_TESTNET].router3Address).toBeDefined;
+        expect(chainInfo[Chain.POLYGON_TESTNET].router3Address).toBeDefined;
     });
 });
 
