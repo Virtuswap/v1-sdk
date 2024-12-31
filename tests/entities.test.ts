@@ -9,9 +9,11 @@ describe('Chain parameters', () => {
         expect(Chain.POLYGON_TESTNET).toEqual(80002);
         expect(Chain.ARBITRUM_MAINNET).toEqual(42161);
         expect(Chain.ARBITRUM_TESTNET).toEqual(421614);
+        expect(Chain.ZENCHAIN_TESTNET).toEqual(8408);
     });
 
     test('useBlockTimestamp parameter is set correctly', async () => {
+        expect(chainInfo[Chain.ZENCHAIN_TESTNET].useBlockTimestamp).toBeTruthy;
         expect(chainInfo[Chain.ARBITRUM_TESTNET].useBlockTimestamp).toBeTruthy;
         expect(chainInfo[Chain.ARBITRUM_MAINNET].useBlockTimestamp).toBeTruthy;
         expect(chainInfo[Chain.POLYGON_TESTNET].useBlockTimestamp).toBeFalsy;
@@ -19,6 +21,7 @@ describe('Chain parameters', () => {
     });
 
     test('router2Address is set', async () => {
+        expect(chainInfo[Chain.ZENCHAIN_TESTNET].router2Address).toBeDefined;
         expect(chainInfo[Chain.ARBITRUM_TESTNET].router2Address).toBeDefined;
         expect(chainInfo[Chain.ARBITRUM_MAINNET].router2Address).toBeDefined;
         expect(chainInfo[Chain.POLYGON_TESTNET].router2Address).toBeDefined;
@@ -26,6 +29,7 @@ describe('Chain parameters', () => {
     });
 
     test('router3Address is set', async () => {
+        expect(chainInfo[Chain.ZENCHAIN_TESTNET].router3Address).toBeDefined;
         expect(chainInfo[Chain.ARBITRUM_TESTNET].router3Address).toBeDefined;
         expect(chainInfo[Chain.ARBITRUM_MAINNET].router3Address).toBeDefined;
         expect(chainInfo[Chain.POLYGON_TESTNET].router3Address).toBeDefined;

@@ -6,6 +6,7 @@ export enum MainnetChain {
 export enum TestnetChain {
     POLYGON_TESTNET = 80002,
     ARBITRUM_TESTNET = 421614,
+    ZENCHAIN_TESTNET = 8408,
 }
 
 export type Chain = MainnetChain | TestnetChain;
@@ -52,6 +53,13 @@ export const chainInfo: ChainInfo = {
         router2Address: '0x59EA964982d009CD79592038cB41aa95BfBD3283',
         router3Address: '0xD52fd13f56c3C16a7156Fa29D49f83cfaF45Fa25',
         weth9Address: '0xf5A74196CfA5fb26c70A1eC755A07635758dd9DD',
+        useBlockTimestamp: true,
+    },
+    // ZENCHAIN
+    8408: {
+        router2Address: '0x68748818983CD5B4cD569E92634b8505CFc41FE8',
+        router3Address: '0xD694285B88D2bBdbBe03616Bb850728581a9b0c0',
+        weth9Address: '0x818E9bc39c0a5755aB6dC1d3e0c53a0929580602',
         useBlockTimestamp: true,
     },
 };
