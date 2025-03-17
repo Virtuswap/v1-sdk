@@ -9,12 +9,20 @@ export enum SwapType {
     VIRTUAL,
 }
 
+export type RouteNodeMetrics = {
+    priceImpact: number;
+    fee: number;
+    vSwapSavings?: number;
+};
+
 export type BaseRouteNode = {
     path: Array<Token>;
     type: SwapType;
     amountInBn: ethers.BigNumber;
     amountOutBn: ethers.BigNumber;
     slippageThresholdAmountBn: ethers.BigNumber;
+    weight?: number;
+    metrics?: RouteNodeMetrics;
 };
 
 export type ReserveRouteNode = BaseRouteNode & {
@@ -23,6 +31,17 @@ export type ReserveRouteNode = BaseRouteNode & {
 };
 
 export type RouteNode = BaseRouteNode | ReserveRouteNode;
+
+export type RouteMetrics = {
+    realPoolPCT: number;
+    vPoolPCT: number;
+    triangularPCT: number;
+    price0: number;
+    price1: number;
+    totalSavings: number;
+    priceImpact: number;
+    avgFee: number;
+};
 
 export type Route = {
     isExactInput: boolean;
@@ -33,10 +52,12 @@ export type Route = {
     amountOutUsd: number;
     chain: Chain;
     steps: Array<RouteNode>;
+    metrics?: RouteMetrics;
 };
 
 export type SwapOptions = {
     slippage: number;
     isExactInput: boolean;
     timeoutMs: number;
+    calculateMetrics: boolean;
 };

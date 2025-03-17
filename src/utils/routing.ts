@@ -20,6 +20,7 @@ type RouteParams = {
     slippage?: number;
     isExactInput?: boolean;
     timeoutMs?: number;
+    calculateMetrics?: boolean;
 };
 
 const mainnetDomain = 'api.virtuswap.io';
@@ -49,6 +50,7 @@ export async function getRoute(
         slippage,
         isExactInput,
         timeoutMs,
+        calculateMetrics,
     }: RouteParams,
     loadTokensInfo?: boolean
 ): Promise<Route> {
@@ -69,6 +71,7 @@ export async function getRoute(
         slippage: (slippage ?? 1000).toString(),
         isExactInput: (isExactInput ?? true).toString(),
         timeoutMs: (timeoutMs ?? 500).toString(),
+        calculateMetrics: (calculateMetrics ?? false).toString(),
     });
 
     try {

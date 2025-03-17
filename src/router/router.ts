@@ -19,6 +19,7 @@ export class Router {
             isExactInput: swapOptions?.isExactInput ?? true,
             slippage: swapOptions?.slippage ?? 1000,
             timeoutMs: swapOptions?.timeoutMs ?? 500,
+            calculateMetrics: swapOptions?.calculateMetrics ?? false,
         };
     }
 
@@ -35,6 +36,9 @@ export class Router {
                 swapOptions?.isExactInput ?? this.swapOptions.isExactInput,
             slippage: swapOptions?.slippage ?? this.swapOptions.slippage,
             timeoutMs: swapOptions?.timeoutMs ?? this.swapOptions.timeoutMs,
+            calculateMetrics:
+                swapOptions?.calculateMetrics ??
+                this.swapOptions.calculateMetrics,
         };
         return await getRoute(
             {
