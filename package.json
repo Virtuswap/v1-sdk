@@ -18,7 +18,7 @@
         "prepublishOnly": "npm run build"
     },
     "name": "@virtuswap/v1-sdk",
-    "version": "2.1.2-beta",
+    "version": "2.1.2",
     "description": "VirtuSwap SDK",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
