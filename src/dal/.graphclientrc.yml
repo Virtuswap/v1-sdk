@@ -1,9 +1,0 @@
-sources:
-    - name: graph-test-arb
-      handler:
-          graphql:
-              endpoint: https://api.studio.thegraph.com/query/65471/graph-test-arb/version/latest
-
-documents:
-    - ./graphql/pairs.graphql
-    - ./graphql/meta.graphql

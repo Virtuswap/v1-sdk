@@ -48,8 +48,6 @@ export type Route = {
     tokenIn: TokenWithBalance;
     tokenOut: TokenWithBalance;
     slippageThresholdAmount: TokenWithBalance;
-    amountInUsd: number;
-    amountOutUsd: number;
     chain: Chain;
     steps: Array<RouteNode>;
     metrics?: RouteMetrics;

@@ -1,59 +1,17 @@
 import { ethers } from 'ethers';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 
-import { SwapType, ReserveRouteNode, Route, SwapOptions } from './entities';
+import { SwapType, ReserveRouteNode, Route } from './entities';
 
-import { getRoute } from '../utils';
-import { Chain, chainInfo, Token } from '../entities';
+import { Chain, chainInfo } from '../entities';
+import { LocalRouter } from '../sdk/v1';
 import vRouter2Abi from '../artifacts/vRouter2Abi.json';
 import vRouter3Abi from '../artifacts/vRouter3Abi.json';
 
 const routerV2Interface = new ethers.utils.Interface(vRouter2Abi);
 const routerV3Interface = new ethers.utils.Interface(vRouter3Abi);
 
-export class Router {
-    swapOptions: SwapOptions;
-
-    constructor(swapOptions?: Partial<SwapOptions>) {
-        this.swapOptions = {
-            isExactInput: swapOptions?.isExactInput ?? true,
-            slippage: swapOptions?.slippage ?? 1000,
-            timeoutMs: swapOptions?.timeoutMs ?? 500,
-            calculateMetrics: swapOptions?.calculateMetrics ?? false,
-        };
-    }
-
-    async getRoute(
-        tokenIn: string | Token,
-        tokenOut: string | Token,
-        amount: ethers.BigNumberish,
-        chain: Chain,
-        swapOptions?: Partial<SwapOptions>,
-        loadTokensInfo?: boolean
-    ): Promise<Route> {
-        const localSwapOptions: SwapOptions = {
-            isExactInput:
-                swapOptions?.isExactInput ?? this.swapOptions.isExactInput,
-            slippage: swapOptions?.slippage ?? this.swapOptions.slippage,
-            timeoutMs: swapOptions?.timeoutMs ?? this.swapOptions.timeoutMs,
-            calculateMetrics:
-                swapOptions?.calculateMetrics ??
-                this.swapOptions.calculateMetrics,
-        };
-        return await getRoute(
-            {
-                chain,
-                tokenIn:
-                    typeof tokenIn === 'string' ? tokenIn : tokenIn.address,
-                tokenOut:
-                    typeof tokenOut === 'string' ? tokenOut : tokenOut.address,
-                amount: amount.toString(),
-                ...localSwapOptions,
-            },
-            loadTokensInfo
-        );
-    }
-
+export class Router extends LocalRouter {
     private getRouterV2FunctionName(
         isVirtual: boolean,
         isExactInput: boolean,

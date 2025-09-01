@@ -52,7 +52,7 @@ export class DirectedPair {
     trySwapReserveToNative(
         reserveToken: TokenWithBalance,
         virtualPair: DirectedPair
-    ): [PairReserve, ethers.BigNumber] | never[] {
+    ): readonly [PairReserve, ethers.BigNumber] | never[] {
         const emptyReserve: PairReserve = PairReserve.empty(
             this.referenceToken,
             reserveToken
@@ -200,8 +200,8 @@ export class DirectedPair {
             this.referenceToken,
             reserveToken
         );
-        const prevReserves = this.reserves.find((reserve) =>
-            reserve.reserveToken.address === reserveToken.address
+        const prevReserves = this.reserves.find(
+            (reserve) => reserve.reserveToken.address === reserveToken.address
         );
         currentReserves.reserveToken.balanceBN = reserveToken.balanceBN.add(
             prevReserves
